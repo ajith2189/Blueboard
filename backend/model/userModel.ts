@@ -19,7 +19,6 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
     },
     role: { 
         type: String, 
@@ -33,6 +32,10 @@ const userSchema = new mongoose.Schema(
     about: {
       type: String,
       //required: true,
+      default: null,
+    },
+    googleId: {
+      type: String,
       default: null,
     },
     is_blocked: {

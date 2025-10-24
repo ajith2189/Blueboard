@@ -1,44 +1,4 @@
-// import { redis } from "../utils/redis.js";
-// import bcrypt from "bcrypt";
-// import crypto from "crypto";
 
-// const SIGNUP_KEY = (email: string) => `signup:${email}`;
-
-// export function generateOTP(length: number = 6): string {
-//   return crypto
-//     .randomInt(0, 10 ** length)
-//     .toString()
-//     .padStart(length, "0");
-// }
-
-// export const putPendingSignup = async (name: string,email: string, password: string) => {
-//   //  Hash password
-//   const passwordHash = await bcrypt.hash(password, 10);
-
-//   // Generate OTP
-//   const otp = generateOTP();
-//   const otpHash = await bcrypt.hash(otp, 10);
-
-//   // Create pending signup object
-//   const signupData = {
-//     otpHash,
-//     name,
-//     email,
-//     passwordHash,
-//     attempts: 0,
-//   };
-
-//   // 4. Store in Redis with expiry time
-//   await redis.set(
-//     SIGNUP_KEY(email),
-//     JSON.stringify(signupData),
-//     { EX: 180 } // seconds
-//   );
-//   return otp;
-// };
-
-
-// src/services/otp.service.ts
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { redis } from "../utils/redis.js";

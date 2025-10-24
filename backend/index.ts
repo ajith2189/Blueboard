@@ -13,6 +13,7 @@ import mongoose from "mongoose";
 
 //importing the redis connection
 import { initRedis } from "./utils/redis.js";
+import AdminRoutes from "./routes/adminRoutes.js";
 
 //connection to DB
 const mongoDbUrl = process.env.MONGO_DB_URL;
@@ -43,6 +44,7 @@ app.use(express.urlencoded({ extended: true }));
 // user Routes
 //app.use("/user", userRoutes);
 app.use("/auth", authRoutes);
+app.use("/admin", AdminRoutes);
 
 // Basic error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
