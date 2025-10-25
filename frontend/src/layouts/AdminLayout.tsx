@@ -4,8 +4,9 @@ import AdminSidebar from "../components/adminComponents/AdminSidebar";
 import DetailsTable from "@/components/adminComponents/DetailsTable";
 // import AdminTutors from "@/components/adminComponents/AdminTutors";
 import AdminDashboard from "@/components/adminComponents/AdminDashboard";
-import { getAllUsers } from "../api/admin/getAllUsers";
-import { getAllTutors } from "../api/admin/getAllTutors";
+// import { getAllUsers } from "../api/admin/getAllUsers";
+//import { getAllTutors } from "../api/admin/getAllTutors";
+import { getAllUsers } from "@/api/adminApi";
 
 // interface AdminLayoutProps {
 //   children: ReactNode;
@@ -21,11 +22,11 @@ let child
     case "dashboard":
       child  = <AdminDashboard />;
       break;
-    case "tutors":
-      child  =  <DetailsTable getFunction={getAllTutors} componentName="Tutors" />;
-      break;
     case "students":
       child  = <DetailsTable getFunction={getAllUsers} componentName="Students" />;
+      break;
+       case "tutors":
+      child  =  <DetailsTable getFunction={() => getAllUsers({role:"tutor"})} componentName="Tutors" />;
       break;
     default:
       child  = <AdminDashboard />;

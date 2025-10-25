@@ -19,7 +19,7 @@ interface ApiError {
 
 export const getAllTutors = async (): Promise<User[]> => {
   try {
-    const response = await axiosInstance.get<User[]>("/admin/tutor");
+    const response = await axiosInstance.get<User[]>("/admin/tutor",);
     return response.data;
   } catch (error) {
     if (error instanceof AxiosError && error.response) {

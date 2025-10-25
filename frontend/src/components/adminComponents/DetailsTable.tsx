@@ -1,7 +1,8 @@
-
 import { Search, UserPlus, FileDown } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { User } from "@/api/admin/getAllUsers";
+import { debounce } from "lodash";
+
 interface DetailsTableProps {
   getFunction: () => Promise<User[]>;
   componentName: string;
@@ -11,37 +12,61 @@ const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+
+  const displayedUsers = searchTerm ? filteredUsers : users;
+
   const noProfileUrl =
     "https://res.cloudinary.com/dlgrbt3t2/image/upload/v1755875794/145857007_307ce493-b254-4b2d-8ba4-d12c080d6651_y24ilw.svg";
 
+  // Debounced search
+  const debouncedSearch = useMemo(
+    () =>
+      debounce(async (term: string) => {
+        try {
+          const results = await getFunction(); // Call API with your getFunction
+          const filtered = term
+            ? results.filter(
+                (user) =>
+                  user.name.toLowerCase().includes(term.toLowerCase()) ||
+                  user.email.toLowerCase().includes(term.toLowerCase())
+              )
+            : results;
+          setFilteredUsers(filtered);
+        } catch (err) {
+          console.error("Search failed", err);
+        }
+      }, 400),
+    [getFunction]
+  );
+
+  // Initial fetch
   useEffect(() => {
     setLoading(true);
     const fetchUsers = async () => {
       try {
         const response = await getFunction();
         setUsers(response);
-        console.log("Fetched user details:", response);
       } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Failed to fetch users");
-        }
+        setError(err instanceof Error ? err.message : "Failed to fetch users");
       } finally {
         setLoading(false);
       }
     };
-    
     fetchUsers();
   }, [getFunction]);
 
-  const getStatusChipClass = (status: boolean) => {
-    if (!status) {
-      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300";
-    } else {
-      return "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300";
-    }
-  };
+  // Trigger search on searchTerm change
+  useEffect(() => {
+    debouncedSearch(searchTerm);
+    return debouncedSearch.cancel;
+  }, [searchTerm, debouncedSearch]);
+
+  const getStatusChipClass = (status: boolean) =>
+    status
+      ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+      : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300";
 
   return (
     <div>
@@ -57,8 +82,10 @@ const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             type="text"
-            placeholder="Search students by name or email..."
+            placeholder={`Search ${componentName.toLowerCase()} by name or email...`}
             className="w-full pl-10 pr-4 py-3 rounded-2xl border-0 bg-gray-100 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-600 transition-all duration-200"
           />
         </div>
@@ -76,11 +103,16 @@ const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
         </div>
       </div>
 
-      {/* Students Table */}
-      {loading && <p>Loading students...</p>}
+      {/* Users Table */}
+      {loading && <p>Loading {componentName.toLowerCase()}...</p>}
       {error && <p className="text-red-500">Error: {error}</p>}
-      {!loading && !error && users.length === 0 && <p>No students found.</p>}
-      {!loading && !error && users.length > 0 && (
+      {!loading && !error && displayedUsers.length === 0 && (
+        <p>
+          No {componentName.toLowerCase()} found
+          {searchTerm ? ` for "${searchTerm}"` : ""}.
+        </p>
+      )}
+      {!loading && !error && displayedUsers.length > 0 && (
         <div className="rounded-3xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <table className="w-full text-left">
             <thead className="border-b border-gray-200 dark:border-gray-700">
@@ -103,7 +135,7 @@ const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
               </tr>
             </thead>
             <tbody>
-              {users.map((student) => (
+              {displayedUsers.map((student) => (
                 <tr
                   key={student._id}
                   className="border-b border-gray-200 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
@@ -112,7 +144,6 @@ const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
                     <img
                       src={student.profile_picture_url || noProfileUrl}
                       alt={student.name}
-                      // "this is done to handel when the api  returns null"
                       onError={(e) => (e.currentTarget.src = noProfileUrl)}
                       className="w-10 h-10 rounded-full object-cover"
                     />
@@ -147,9 +178,14 @@ const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
               ))}
             </tbody>
           </table>
+
+          
         </div>
+        
       )}
+      <div>paginationa</div>
     </div>
+    
   );
 };
 
