@@ -17,6 +17,16 @@ interface ApiError {
   statusCode?: number;
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    limit: number;
+  };
+}
+
 const defaultParams = { page: 1, limit: 10, role: "user" };
 
 export const getAllUsers = async (
@@ -26,17 +36,17 @@ export const getAllUsers = async (
     role?: string;
     search?: string;
   } = defaultParams
-
-): Promise<User[]> => {
+): Promise<PaginatedResponse<User>> => {
   try {
-    console.log("all users called");
+    console.log("all users called in the api");
     const mergedParams = { ...defaultParams, ...params };
 
-    const response = await axiosInstance.get<User[]>("/admin/user", {
-      params: mergedParams,
-    });
-    return response.data;
+    const response = await axiosInstance.get<PaginatedResponse<User>>(
+      "/admin/user",
+      { params: mergedParams }
+    );
 
+    return response.data;
   } catch (error) {
     if (error instanceof AxiosError && error.response) {
       const apiError: ApiError = {

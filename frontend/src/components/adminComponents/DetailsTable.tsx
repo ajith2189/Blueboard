@@ -1,53 +1,53 @@
-import { Search, UserPlus, FileDown } from "lucide-react";
+import { UserPlus, FileDown } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
-import type { User } from "@/api/admin/getAllUsers";
+import type { User, PaginatedResponse } from "@/api/adminApi"; // Import PaginatedResponse
 import { debounce } from "lodash";
+import Pagination from "../ui/Pagination";
+import SearchInput from "../ui/SearchInput";
 
 interface DetailsTableProps {
-  getFunction: () => Promise<User[]>;
-  componentName: string;
+  getFunction: (params?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    role?: string; // Add role to match getAllUsers
+  }) => Promise<PaginatedResponse<User>>; // Update return type
+  title: string;
+  initialParams?: {
+    limit?: number;
+    role?: string;
+  };
 }
 
-const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
+const noProfileUrl =
+  "https://res.cloudinary.com/dlgrbt3t2/image/upload/v1755875794/145857007_307ce493-b254-4b2d-8ba4-d12c080d6651_y24ilw.svg";
+
+const DetailsTable = ({
+  getFunction,
+  initialParams,
+  title,
+}: DetailsTableProps) => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const displayedUsers = searchTerm ? filteredUsers : users;
-
-  const noProfileUrl =
-    "https://res.cloudinary.com/dlgrbt3t2/image/upload/v1755875794/145857007_307ce493-b254-4b2d-8ba4-d12c080d6651_y24ilw.svg";
-
-  // Debounced search
-  const debouncedSearch = useMemo(
-    () =>
-      debounce(async (term: string) => {
-        try {
-          const results = await getFunction(); // Call API with your getFunction
-          const filtered = term
-            ? results.filter(
-                (user) =>
-                  user.name.toLowerCase().includes(term.toLowerCase()) ||
-                  user.email.toLowerCase().includes(term.toLowerCase())
-              )
-            : results;
-          setFilteredUsers(filtered);
-        } catch (err) {
-          console.error("Search failed", err);
-        }
-      }, 400),
-    [getFunction]
-  );
 
   // Initial fetch
   useEffect(() => {
     setLoading(true);
     const fetchUsers = async () => {
       try {
-        const response = await getFunction();
-        setUsers(response);
+        const response = await getFunction({
+          ...initialParams,
+          page: currentPage,
+        });
+        setUsers(response.data); // Access the User[] array from response.data
+        setTotalPages(response.pagination.totalPages); // Access pagination
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to fetch users");
       } finally {
@@ -55,11 +55,34 @@ const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
       }
     };
     fetchUsers();
-  }, [getFunction]);
+  }, [getFunction, initialParams, currentPage]);
+
+  const handleBlock =() => {
+    
+
+  }
+
+  // Debounced search
+  const debouncedSearch = useMemo(
+    () =>
+      debounce(async (term: string) => {
+        try {
+          const results = await getFunction({ ...initialParams, search: term });
+          setFilteredUsers(results.data); // Access User[] from results.data
+        } catch (err) {
+          console.error("Search failed", err);
+        }
+      }, 400),
+    [getFunction, initialParams]
+  );
 
   // Trigger search on searchTerm change
   useEffect(() => {
-    debouncedSearch(searchTerm);
+    if (searchTerm) {
+      debouncedSearch(searchTerm);
+    } else {
+      setFilteredUsers([]);
+    }
     return debouncedSearch.cancel;
   }, [searchTerm, debouncedSearch]);
 
@@ -71,22 +94,20 @@ const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
-        Manage {componentName}
+        Manage {title}
       </h1>
       <p className="text-gray-600 dark:text-gray-400 mb-6">
-        View, add, edit, or remove {componentName.toLowerCase()} profiles.
+        View, add, edit, or remove {title.toLowerCase()} profiles.
       </p>
 
       {/* Header with Search and Actions */}
       <div className="flex items-center justify-between mb-6">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
+        <div className="flex justify-between items-center mb-4">
+          <SearchInput
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            type="text"
-            placeholder={`Search ${componentName.toLowerCase()} by name or email...`}
-            className="w-full pl-10 pr-4 py-3 rounded-2xl border-0 bg-gray-100 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-600 transition-all duration-200"
+            onChange={setSearchTerm}
+            onClear={() => setSearchTerm("")}
+            placeholder="Search users by name or email..."
           />
         </div>
         <div className="flex items-center space-x-3">
@@ -98,17 +119,17 @@ const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
           </button>
           <button className="flex items-center justify-center space-x-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:opacity-90 transition-opacity">
             <UserPlus className="w-5 h-5" />
-            <span className="font-medium">Add {componentName}</span>
+            <span className="font-medium">Add {title}</span>
           </button>
         </div>
       </div>
 
       {/* Users Table */}
-      {loading && <p>Loading {componentName.toLowerCase()}...</p>}
+      {loading && <p>Loading {title.toLowerCase()}...</p>}
       {error && <p className="text-red-500">Error: {error}</p>}
       {!loading && !error && displayedUsers.length === 0 && (
         <p>
-          No {componentName.toLowerCase()} found
+          No {title.toLowerCase()} found
           {searchTerm ? ` for "${searchTerm}"` : ""}.
         </p>
       )}
@@ -170,7 +191,9 @@ const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
                     </span>
                   </td>
                   <td className="p-4">
-                    <button className="text-blue-600 hover:underline">
+                    <button
+                    onClick={handleBlock}
+                     className="text-blue-600 hover:underline">
                       Edit
                     </button>
                   </td>
@@ -178,14 +201,14 @@ const DetailsTable = ({ getFunction, componentName }: DetailsTableProps) => {
               ))}
             </tbody>
           </table>
-
-          
         </div>
-        
       )}
-      <div>paginationa</div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => setCurrentPage(page)}
+      />
     </div>
-    
   );
 };
 
