@@ -29,6 +29,8 @@ export interface PaginatedResponse<T> {
 
 const defaultParams = { page: 1, limit: 10, role: "user" };
 
+
+
 export const getAllUsers = async (
   params: {
     page?: number;
@@ -42,7 +44,7 @@ export const getAllUsers = async (
     const mergedParams = { ...defaultParams, ...params };
 
     const response = await axiosInstance.get<PaginatedResponse<User>>(
-      "/admin/user",
+      "/admin/users",
       { params: mergedParams }
     );
 
@@ -58,3 +60,13 @@ export const getAllUsers = async (
     throw error;
   }
 };
+
+export const blockUser = async (userId: string) => {
+  console.log("block user is called");
+  const response = await axiosInstance.patch(
+    `/admin/users/${userId}/block`, 
+    { is_blocked: true }     
+  );
+  return response.data;
+};
+

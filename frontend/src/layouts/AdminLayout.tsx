@@ -1,9 +1,9 @@
-import { useState} from "react";
+import { useState } from "react";
 import AdminNavbar from "../components/adminComponents/AdminNavbar";
 import AdminSidebar from "../components/adminComponents/AdminSidebar";
 import DetailsTable from "@/components/adminComponents/DetailsTable";
 import AdminDashboard from "@/components/adminComponents/AdminDashboard";
-import { getAllUsers } from "@/api/adminApi";
+import { getAllUsers, blockUser } from "@/api/adminApi";
 
 const AdminLayout = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -26,6 +26,7 @@ const AdminLayout = () => {
         <DetailsTable
           getFunction={getAllUsers}
           initialParams={userParams}
+          blockFunction={blockUser}
           title="Students"
         />
       );
@@ -36,6 +37,7 @@ const AdminLayout = () => {
       child = (
         <DetailsTable
           getFunction={getAllUsers}
+          blockFunction={blockUser}
           initialParams={TutorParams}
           title="Tutors"
         />

@@ -34,7 +34,9 @@ const app = express();
 const port = process.env.PORT || 5000;
 // helps secure the app by setting various HTTP headers
 // this need to change in the production 
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+// app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(cors({ origin: true, credentials: true }));
+
 // logs all the details of incoming requests
 app.use(helmet());
 app.use(morgan("dev"));

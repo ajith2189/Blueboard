@@ -1,11 +1,14 @@
 import { Request, Response } from "express";
 import User from "../model/userModel.js";
+import Category from "../model/categoryModel.js"; // adjust path as needed
+import { runInNewContext } from "vm";
 
+//---------------------getAllUsers ---------------------------------------
 export const getAllUsers = async (req: Request, res: Response) => {
   console.log("get all users called");
 
   try {
-    const { page = 1, limit = 10, role, search } = req.query;
+    const { page = 1, limit = 10, role = "user", search } = req.query;
     const query: any = {};
 
     if (role) query.role = role;
@@ -18,15 +21,8 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    // ✅ Sort by createdAt descending (latest first)
-    // const sortOption : object = ;
-
     const [data, totalItems] = await Promise.all([
-      User.find(query)
-      .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(Number(limit))
-        ,
+      User.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
       User.countDocuments(query),
     ]);
 
@@ -46,3 +42,138 @@ export const getAllUsers = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Failed to fetch users" });
   }
 };
+//----------------------------blockUser------------------------
+export const blockUser = async (req: Request, res: Response) => {
+  console.log("block user controller");
+  const { id } = req.params;
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      id,
+      [{ $set: { is_blocked: { $not: "$is_blocked" } } }],
+      { new: true }
+    );
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to block user", error: err });
+  }
+};
+// ---------------- Get all categories ----------------
+export const getAllCategories = async (req: Request, res: Response) => {
+  try {
+    const categories = await Category.find().sort({ created_at: -1 });
+    return res.status(200).json(categories);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error while fetching categories",
+      error,
+    });
+  }
+};
+// ---------------- Add new category ----------------
+export const createCategory = async (req: Request, res: Response) => {
+  const { categoryName, categoryDescription } = req.body;
+
+  try {
+    // Check for existing category
+    const existing = await Category.findOne({ name: categoryName });
+    if (existing) {
+      return res.status(409).json({ message: "Category already exists." });
+    }
+
+    // Create new category
+    const category = new Category({
+      name: categoryName.trim(),
+      description: categoryDescription?.trim() || "",
+    });
+
+    await category.save();
+
+    return res.status(201).json({
+      message: "Category created successfully",
+      category,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error while creating category",
+      error,
+    });
+  }
+};
+// --------------------------updateCategory-------------------------
+export const updateCategory = async (req: Request, res: Response) => {
+  try {
+    const { id: categoryId } = req.params;
+    const { name, description } = req.body;
+
+    // Validate input
+    if (!name && !description) {
+      return res.status(400).json({ message: "No update fields provided." });
+    }
+
+    //  Find category
+    const category = await Category.findOne({ category_id: categoryId });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found." });
+    }
+
+    //  Apply only provided updates
+    if (name?.trim()) category.name = name.trim();
+    if (description?.trim()) category.description = description.trim();
+
+    //  Save updated category
+    await category.save();
+
+    //  Return updated record
+    return res.status(200).json({
+      message: "Category updated successfully",
+      data: category,
+    });
+
+  } catch (error) {
+    console.error("Error updating category:", error);
+    return res.status(500).json({
+      message: "Server error while updating category",
+      error: (error as Error).message,
+    });
+  }
+};
+// --------------------------delete User -------------------------
+export const deleteCategory = async (req: Request, res: Response) => {
+  try {
+    const { id: categoryId } = req.params;
+
+    // 1️⃣ Validate input early
+    if (!categoryId) {
+      return res.status(400).json({ message: "Category ID is required." });
+    }
+
+    // 2️⃣ Check if the category exists
+    const category = await Category.findOne({ category_id: categoryId });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found." });
+    }
+
+    // 3️⃣ Delete the category
+    await Category.deleteOne({ category_id: categoryId });
+
+    // 4️⃣ Send clean and consistent response
+    return res.status(200).json({
+      success: true,
+      message: `Category '${category.name}' deleted successfully.`,
+      deletedCategoryId: categoryId,
+    });
+
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while deleting category.",
+      error: (error as Error).message,
+    });
+  }
+};
+

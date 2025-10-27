@@ -4,17 +4,20 @@ import Home from "./pages/user/Home";
 import UserLogin from "./pages/auth/UserLogin";
 import AdminLogin from "./pages/auth/AdminLogin";
 import AdminLayout from "./layouts/AdminLayout";
-import TestPage from "./pages/Test";
+// import TestPage from "./pages/Test";
 import NotFound from "./pages/NotFound";
 import TutorLayout from "./layouts/TutorLayout";
-import Pagination from '@/components/ui/Pagination';
+// import Pagination from '@/components/ui/Pagination';
+import { Toaster } from "sonner";
+import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 
 export default function App() {
   return (
     <BrowserRouter>
+    <Toaster position="top-right" />
       <Routes>
         {/* test route */}
-        <Route path="/test" element={<Pagination />} />
+        <Route path="/test" element={<ConfirmDialog />} />
 
         {/*User--tutor Authentication Routes*/}
         <Route path="/" element={<Home />} />

@@ -4,6 +4,8 @@ import type { User, PaginatedResponse } from "@/api/adminApi"; // Import Paginat
 import { debounce } from "lodash";
 import Pagination from "../ui/Pagination";
 import SearchInput from "../ui/SearchInput";
+import { toast } from "sonner";
+import { ConfirmDialog } from "../ui/ConfirmDialog";
 
 interface DetailsTableProps {
   getFunction: (params?: {
@@ -12,6 +14,7 @@ interface DetailsTableProps {
     limit?: number;
     role?: string; // Add role to match getAllUsers
   }) => Promise<PaginatedResponse<User>>; // Update return type
+  blockFunction: (userId: string) => Promise<User>;
   title: string;
   initialParams?: {
     limit?: number;
@@ -22,8 +25,15 @@ interface DetailsTableProps {
 const noProfileUrl =
   "https://res.cloudinary.com/dlgrbt3t2/image/upload/v1755875794/145857007_307ce493-b254-4b2d-8ba4-d12c080d6651_y24ilw.svg";
 
+
+
+
+// ----------------------------- Start of Component-----------------------------------------
+
 const DetailsTable = ({
   getFunction,
+  blockFunction,
+
   initialParams,
   title,
 }: DetailsTableProps) => {
@@ -57,11 +67,6 @@ const DetailsTable = ({
     fetchUsers();
   }, [getFunction, initialParams, currentPage]);
 
-  const handleBlock =() => {
-    
-
-  }
-
   // Debounced search
   const debouncedSearch = useMemo(
     () =>
@@ -85,6 +90,23 @@ const DetailsTable = ({
     }
     return debouncedSearch.cancel;
   }, [searchTerm, debouncedSearch]);
+
+  //Blocking user
+  const handleBlock = async (id: string) => {
+    const loadingToastId = toast.loading("Blocking the user");
+    try {
+      const updatedUser = await blockFunction(id);
+      setUsers((prev) =>
+        prev.map((user) => (user._id === id ? updatedUser : user))
+      );
+      toast.success(`user action  successfully`)
+    } catch (err) {
+      console.error("Failed to block user", err);
+      toast.error("Failed to block user. Please try again.");
+    }finally{
+      toast.dismiss(loadingToastId);
+    }
+  };
 
   const getStatusChipClass = (status: boolean) =>
     status
@@ -190,13 +212,24 @@ const DetailsTable = ({
                       {student.is_blocked ? "Blocked" : "Active"}
                     </span>
                   </td>
+
+                  {/* ----------------------------block button --------------------- */}
                   <td className="p-4">
-                    <button
-                    onClick={handleBlock}
-                     className="text-blue-600 hover:underline">
-                      Edit
-                    </button>
+                    <ConfirmDialog
+                      triggerText={student.is_blocked ? "Unblock" : "Block"}
+                      title={`${student.is_blocked ? "Unblock" : "Block"} ${
+                        student.name
+                      }?`}
+                      description={`Are you sure you want to ${
+                        student.is_blocked ? "unblock" : "block"
+                      } this user?`}
+                      confirmText={student.is_blocked ? "Unblock" : "Block"}
+                      variant={student.is_blocked ? "outline" : "destructive"}
+                      onConfirm={() => handleBlock(student._id)}
+                    />
                   </td>
+
+
                 </tr>
               ))}
             </tbody>

@@ -53,11 +53,6 @@ export const userRegister = async (req: Request, res: Response) => {
 
 
 // ----------------------------------------Google register -----------------------------
-
-
-
-
-
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const googleSignUp = async (req: Request, res: Response) => {
@@ -234,14 +229,6 @@ export const userLogin = async (req: Request, res: Response) => {
 
 
 console.log("login successful");
-
-  //  return res.status(200).json({
-  //     message: "Login successful",
-  //     userId: user._id,
-  //     name: user.name,
-  //     email: user.email,
-  //   });
-
 
     const refreshToken = generateRefreshToken(user._id.toString());
 
