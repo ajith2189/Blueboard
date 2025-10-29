@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface ConfirmDialogProps {
+  icon?: React.ReactNode;
   triggerText?: string;
   title?: string;
   description?: string;
@@ -22,6 +23,7 @@ interface ConfirmDialogProps {
 }
 
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+  icon,
   triggerText = "Show Dialog",
   title = "Are you sure?",
   description = "This action cannot be undone.",
@@ -32,7 +34,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant={variant}>{triggerText}</Button>
+        <Button variant={variant} className="flex items-center gap-2">
+          {icon && <span className="w-4 h-4">{icon}</span>}
+          {triggerText}
+        </Button>
       </AlertDialogTrigger>
 
       <AlertDialogContent>

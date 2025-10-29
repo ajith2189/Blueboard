@@ -1,4 +1,5 @@
 import React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationProps {
   currentPage: number;
@@ -7,17 +8,22 @@ interface PaginationProps {
   siblingCount?: number;
 }
 
+/**
+ * A styled pagination component designed to match the admin dashboard's aesthetic.
+ * It's meant to be placed at the bottom of a content card.
+ */
 const Pagination: React.FC<PaginationProps> = ({
   currentPage = 1,
   totalPages = 1,
   onPageChange,
   siblingCount = 1,
 }) => {
-  if (totalPages === 0) return null;
+  if (totalPages <= 1) return null; // Don't render if only one page
 
+  // Logic to get page numbers, including siblings and ellipses
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
-    const totalNumbers = siblingCount * 2 + 3;
+    const totalNumbers = siblingCount * 2 + 3; //
     const totalBlocks = totalNumbers + 2;
 
     if (totalPages > totalBlocks) {
@@ -36,45 +42,61 @@ const Pagination: React.FC<PaginationProps> = ({
     return pages;
   };
 
-  return (
-    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 flex justify-center items-center space-x-2 bg-white dark:bg-gray-900 shadow-lg px-4 py-2 rounded-xl z-50">
-      {currentPage > 1 && (
-        <button
-          className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
-          onClick={() => onPageChange(currentPage - 1)}
-        >
-          Prev
-        </button>
-      )}
+  const pageNumbers = getPageNumbers();
 
-      {getPageNumbers().map((page, index) =>
+  // Button style for active page
+  const activeBtnClasses =
+    "flex items-center justify-center px-3.5 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-lg";
+
+  // Button style for inactive pages and prev/next
+  const inactiveBtnClasses =
+    "flex items-center justify-center px-3.5 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed";
+
+  return (
+    // This container should be placed at the bottom of your list, inside the card
+    <div className="flex justify-center items-center space-x-2 pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+      {/* Previous Button */}
+      <button
+        className={inactiveBtnClasses}
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        aria-label="Go to previous page"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+
+      {/* Page Number Buttons */}
+      {pageNumbers.map((page, index) =>
         page === "..." ? (
-          <span key={index} className="px-3 py-1 text-gray-500">
+          <span
+            key={`ellipsis-${index}`}
+            className="flex items-center justify-center px-3.5 py-2 text-sm font-medium text-gray-500"
+          >
             ...
           </span>
         ) : (
           <button
-            key={index}
+            key={`page-${page}`}
             onClick={() => onPageChange(page as number)}
-            className={`px-3 py-1 rounded-lg transition-colors ${
-              page === currentPage
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
-            }`}
+            className={
+              page === currentPage ? activeBtnClasses : inactiveBtnClasses
+            }
+            aria-current={page === currentPage ? "page" : undefined}
           >
             {page}
           </button>
         )
       )}
 
-      {currentPage < totalPages && (
-        <button
-          className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
-          onClick={() => onPageChange(currentPage + 1)}
-        >
-          Next
-        </button>
-      )}
+      {/* Next Button */}
+      <button
+        className={inactiveBtnClasses}
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        aria-label="Go to next page"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
     </div>
   );
 };

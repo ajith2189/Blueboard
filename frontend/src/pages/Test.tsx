@@ -1,7 +1,11 @@
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function TestPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500">
+    <>
+      {/* // <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500"> */}
+      <div>
       <div className="bg-white p-10 rounded-2xl shadow-xl text-center">
         <h1 className="text-4xl font-bold text-gray-800 mb-4">
           🚀 Tailwind is Working!
@@ -14,6 +18,19 @@ export default function TestPage() {
           Test Button
         </button>
       </div>
-    </div>
-  );
+      <Button>ahel</Button>
+      <Button variant={"destructive"}>ahel</Button>
+      <Button variant={"secondary"}>ahel</Button>
+      <Button variant={"ghost"}>ahel</Button>
+      <Button variant={"link"}>ahel</Button>
+      <Button variant={"admin"}>ahel</Button>
+      <Button >
+      </Button>
+      <Spinner />
+      </div>
+      <Spinner className="size-8" />
+    </>
+    );
 }
+  
+

@@ -74,20 +74,20 @@ export const getAllCategories = async (req: Request, res: Response) => {
   }
 };
 // ---------------- Add new category ----------------
-export const createCategory = async (req: Request, res: Response) => {
-  const { categoryName, categoryDescription } = req.body;
+export const addCategory = async (req: Request, res: Response) => {
+  const { name, description } = req.body;
 
   try {
     // Check for existing category
-    const existing = await Category.findOne({ name: categoryName });
+    const existing = await Category.findOne({ name: name });
     if (existing) {
       return res.status(409).json({ message: "Category already exists." });
     }
 
     // Create new category
     const category = new Category({
-      name: categoryName.trim(),
-      description: categoryDescription?.trim() || "",
+      name :name.trim(),
+      description : description?.trim() || "",
     });
 
     await category.save();
@@ -132,7 +132,6 @@ export const updateCategory = async (req: Request, res: Response) => {
       message: "Category updated successfully",
       data: category,
     });
-
   } catch (error) {
     console.error("Error updating category:", error);
     return res.status(500).json({
@@ -146,27 +145,22 @@ export const deleteCategory = async (req: Request, res: Response) => {
   try {
     const { id: categoryId } = req.params;
 
-    // 1️⃣ Validate input early
     if (!categoryId) {
       return res.status(400).json({ message: "Category ID is required." });
     }
 
-    // 2️⃣ Check if the category exists
     const category = await Category.findOne({ category_id: categoryId });
     if (!category) {
       return res.status(404).json({ message: "Category not found." });
     }
 
-    // 3️⃣ Delete the category
     await Category.deleteOne({ category_id: categoryId });
 
-    // 4️⃣ Send clean and consistent response
     return res.status(200).json({
       success: true,
       message: `Category '${category.name}' deleted successfully.`,
       deletedCategoryId: categoryId,
     });
-
   } catch (error) {
     console.error("Error deleting category:", error);
     return res.status(500).json({
@@ -176,4 +170,20 @@ export const deleteCategory = async (req: Request, res: Response) => {
     });
   }
 };
+export const getCategoryById = async (req: Request, res: Response) => {
+  try {
+    const { id: categoryId } = req.params;
+    const category = await Category.findOne({ category_id: categoryId });
 
+    if (!category) {
+      return res.status(404).json({ message: "Category not found." });
+    } 
+    return res.status(200).json(category);
+  } catch (error) {
+    console.error("Error fetching category by ID:", error);
+    return res.status(500).json({ 
+      message: "Server error while fetching category.",
+      error: (error as Error).message,
+    });
+  } 
+};

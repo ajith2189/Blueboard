@@ -1,5 +1,4 @@
 import axiosInstance from "@/utils/axios";
-import { AxiosError } from "axios";
 
 export type User = {
   _id: string;
@@ -11,11 +10,13 @@ export type User = {
   updatedAt: string;
   profile_picture_url: string | null;
 };
-
-interface ApiError {
-  message: string;
-  statusCode?: number;
-}
+export type Category = {
+  category_id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+};
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -27,46 +28,41 @@ export interface PaginatedResponse<T> {
   };
 }
 
-const defaultParams = { page: 1, limit: 10, role: "user" };
 
-
-
-export const getAllUsers = async (
-  params: {
-    page?: number;
-    limit?: number;
-    role?: string;
-    search?: string;
-  } = defaultParams
-): Promise<PaginatedResponse<User>> => {
-  try {
-    console.log("all users called in the api");
-    const mergedParams = { ...defaultParams, ...params };
-
-    const response = await axiosInstance.get<PaginatedResponse<User>>(
-      "/admin/users",
-      { params: mergedParams }
-    );
-
-    return response.data;
-  } catch (error) {
-    if (error instanceof AxiosError && error.response) {
-      const apiError: ApiError = {
-        message: error.response.data?.message || "Unknown error",
-        statusCode: error.response.status,
-      };
-      throw apiError;
-    }
-    throw error;
-  }
-};
-
-export const blockUser = async (userId: string) => {
-  console.log("block user is called");
-  const response = await axiosInstance.patch(
-    `/admin/users/${userId}/block`, 
-    { is_blocked: true }     
-  );
+export const getAllUsers = async (params?: object) => {
+  const mergedParams = { page: 1, limit: 10, role: "user", ...params };
+  const response = await axiosInstance.get("/admin/users", { params: mergedParams });
   return response.data;
 };
 
+export const blockUser = async (userId: string) => {
+  const response = await axiosInstance.patch(`/admin/users/${userId}/block`, {
+    is_blocked: true,
+  });
+  return response.data;
+};
+
+export const getAllCategories = async () => {
+  const response = await axiosInstance.get("/admin/categories");
+  return response.data;
+};
+
+export const addCategory = async (data: object) => {
+  const response = await axiosInstance.post(`/admin/categories/`, data);
+  return response.data;
+};
+
+export const updateCategory = async (categoryId: string, data: object) => {
+  const response = await axiosInstance.put(`/admin/categories/${categoryId}`, data);
+  return response.data;
+};
+
+export const deleteCategory = async (categoryId: string) => {
+  const response = await axiosInstance.delete(`/admin/categories/${categoryId}`);
+  return response.data;
+};
+
+export const getCategoryById = async (id: string) => {
+  const response = await axiosInstance.get(`/admin/categories/${id}`);
+  return response.data;
+};
