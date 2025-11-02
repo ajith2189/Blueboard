@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { loginSuccessful } from "@/features/authSlice";
-import { adminLoginApi } from "@/api/admin/adminLoginApi";
+import { adminLoginApi } from "@/api/adminLoginApi";
 
 interface AdminLoginFormData {
   email: string;

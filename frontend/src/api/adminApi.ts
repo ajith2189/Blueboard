@@ -42,8 +42,9 @@ export const blockUser = async (userId: string) => {
   return response.data;
 };
 
-export const getAllCategories = async () => {
-  const response = await axiosInstance.get("/admin/categories");
+export const getAllCategories = async (params?:object) => {
+  const mergedParams = { page: 1, limit: 10, ...params };
+  const response = await axiosInstance.get("/admin/categories", { params: mergedParams });
   return response.data;
 };
 

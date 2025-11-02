@@ -24,6 +24,33 @@ export const RegisterApi = async (Credentials: RegisterCredentials) => {
   }
 };
 
+
+// export const forgotPasswordApi = async (email: string) => {
+//   try {
+//     const response = await axiosInstance.post("/auth/forgot-password-otp", { email });  
+//     return response.data;
+
+//   } catch (error) {
+//     if (error instanceof AxiosError && error.response) {
+//       throw error.response.data;
+//     }
+//     throw error;
+//   }
+// };
+
+// export const resetPasswordApi = async (token: string, newPassword: string) => {
+//   try {
+//     const response = await axiosInstance.post("/auth/reset-password", { token, newPassword });  
+//     return response.data;
+
+//   } catch (error) {
+//     if (error instanceof AxiosError && error.response) {
+//       throw error.response.data;
+//     }   
+//     throw error;
+//   }   
+// };
+
 // ---------------------------Google Sign Up--------------------------- 
 
 export const googleSignUp = async (credential: string) => {
@@ -72,4 +99,19 @@ export const LoginApi = async (Credentials: LoginCredentials) => {
     }
     throw error;
   }
+};
+
+/////////////////////////////////////////reset password api//////////////////////////////////////
+
+export const forgotPasswordApi = async (email: string) => {
+  return axiosInstance.post("/auth/forgot-password-otp", { email });
+};
+
+export const verifyResetOtpApi = async (email: string, otp: string) => {
+  console.log("reset totp called");
+  return axiosInstance.post("/auth/verify-reset-otp", { email, otp });
+};
+
+export const resetPasswordApi = async (resetToken: string, password: string) => {
+  return axiosInstance.post("/auth/reset-password", { resetToken, password });
 };

@@ -1,6 +1,6 @@
 // src/components/Sidebar.jsx
 
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import {
   LayoutDashboard,
   User,
@@ -28,9 +28,14 @@ const navItems = [
   { name: 'Quiz', icon: HelpCircle },
 ];
 
+interface UserState {
+  name: string;
+  // Add other user properties as needed
+}
+
 interface RootState {
   auth: {
-    user: UserState | null;
+    user: UserState;
   };
 }
 

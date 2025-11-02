@@ -13,11 +13,11 @@ import InputField from "@/components/userComponents/InputField";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
-import { LoginApi } from "@/api/user/authApi";
+import { LoginApi } from "@/api/authApi";
 import { loginSuccessful } from "@/features/authSlice";
 import { useDispatch } from "react-redux";
 
-import { googleSignUp } from "@/api/user/authApi";
+import { googleSignUp } from "@/api/authApi";
 import type { CredentialResponse } from "@react-oauth/google";
 import { GoogleLogin } from "@react-oauth/google";
 
@@ -83,6 +83,7 @@ export default function UserLogin() {
 
   const handleForgotPassword = () => {
     console.log("Forgot password clicked");
+    navigate("/forgot-password");
   };
 
   const handleGoogleSuccess = async (

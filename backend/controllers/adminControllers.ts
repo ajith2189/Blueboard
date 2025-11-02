@@ -22,7 +22,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const [data, totalItems] = await Promise.all([
-      User.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+      User.find(query).sort({ created_at: -1 }).skip(skip).limit(Number(limit)),
       User.countDocuments(query),
     ]);
 
@@ -64,13 +64,37 @@ export const blockUser = async (req: Request, res: Response) => {
 // ---------------- Get all categories ----------------
 export const getAllCategories = async (req: Request, res: Response) => {
   try {
-    const categories = await Category.find().sort({ created_at: -1 });
-    return res.status(200).json(categories);
-  } catch (error) {
-    return res.status(500).json({
-      message: "Error while fetching categories",
-      error,
+    const { page = 1, limit = 10, search } = req.query;
+    const query: any = {};
+
+    if (search) {
+      query.$or = [{ name: { $regex: search, $options: "i" } }];
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const [data, totalItems] = await Promise.all([
+      Category.find(query)
+        .sort({ created_at: 1 })
+        .skip(skip)
+        .limit(Number(limit)),
+      Category.countDocuments(query),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / Number(limit));
+
+    res.json({
+      data,
+      pagination: {
+        currentPage: Number(page),
+        totalPages,
+        totalItems,
+        limit: Number(limit),
+      },
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch categories" });
   }
 };
 // ---------------- Add new category ----------------
@@ -86,8 +110,8 @@ export const addCategory = async (req: Request, res: Response) => {
 
     // Create new category
     const category = new Category({
-      name :name.trim(),
-      description : description?.trim() || "",
+      name: name.trim(),
+      description: description?.trim() || "",
     });
 
     await category.save();
@@ -177,13 +201,13 @@ export const getCategoryById = async (req: Request, res: Response) => {
 
     if (!category) {
       return res.status(404).json({ message: "Category not found." });
-    } 
+    }
     return res.status(200).json(category);
   } catch (error) {
     console.error("Error fetching category by ID:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       message: "Server error while fetching category.",
       error: (error as Error).message,
     });
-  } 
+  }
 };

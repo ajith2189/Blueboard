@@ -13,14 +13,16 @@ import {
 import InputField from "@/components/userComponents/InputField";
 import OtpVerificationModal from "../../components/userComponents/OtpVerificationModal";
 import { useNavigate } from "react-router-dom";
-import { RegisterApi } from "@/api/user/authApi";
-import { OtpVerification } from "@/api/user/authApi";
+import { RegisterApi } from "@/api/authApi";
+import { OtpVerification } from "@/api/authApi";
 import { GoogleLogin } from "@react-oauth/google";
 
-import { googleSignUp } from "@/api/user/authApi";
+import { googleSignUp } from "@/api/authApi";
 import type { CredentialResponse } from "@react-oauth/google";
 import { useDispatch } from "react-redux";
 import { loginSuccessful } from "@/features/authSlice";
+import { toast } from "sonner";
+// import { set } from "lodash";
 
 interface RegisterFormData {
   name: string;
@@ -46,36 +48,46 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterFormData) => {
     setLoading(true);
+    setOtpError(null);
     console.log("Submitting registration:", data);
 
     try {
       const response = await RegisterApi(data);
       console.log("Registration successful:", response);
-    } catch (error) {
-      console.error("Registration failed:", error);
-    }
-    setTimeout(() => {
+
       setUserEmail(data.email);
       setShowOtpModal(true);
+      toast.success("OTP sent to your email!");
+    } 
+    catch (error: any) {
+
+      console.log(error);
+
+      if (error.response?.status === 409) {
+        toast.error(error.response?.data?.error || "Email already exists");
+      } else {
+        toast.error(error.response?.data?.error || "Registration failed");
+      }
+      console.error("Registration failed:", error);
+    } finally {
       setLoading(false);
-    }, 2000);
+    }
   };
 
   const handleOtpVerify = async (otp: string) => {
     try {
       const response = await OtpVerification(otp, userEmail);
-      console.log("OTP verification response:", response);
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error("OTP verification failed:", error);
-        setOtpError(error.message || "Unknown error");
-      }
-    }
-    console.log("OTP verified:", otp);
-    navigate("/login");
+      console.log("✅ OTP verification response:", response);
 
-    // Handle successful registration
+      toast.success("OTP verified! You can now log in.");
+      navigate("/login");
+    } catch (error: any) {
+      console.error("❌ OTP verification failed:", error);
+      setOtpError(error?.response?.data?.message || "Invalid or expired OTP");
+      toast.error("Invalid OTP. Please try again.");
+    }
   };
+
   //--------------------------google sign up--------------------------------
 
   const dispatch = useDispatch();

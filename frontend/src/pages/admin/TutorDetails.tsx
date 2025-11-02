@@ -1,5 +1,5 @@
 import React from "react";
-import DetailsTable from "@/components/adminComponents/DetailsTable"; // This is now stubbed below
+import DetailsTable from "@/components/adminComponents/DetailsTable/DetailsTable"; // This is now stubbed below
 
 import { getAllUsers, blockUser } from "@/api/adminApi";
 const TutorDetails: React.FC = () => {

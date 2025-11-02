@@ -25,9 +25,7 @@ const Category = new Schema<ICategory>(
       default: "",
     },
   },
-  {
-    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
-  }
+  { timestamps: true }
 );
 
 export default mongoose.model<ICategory>("Category", Category);

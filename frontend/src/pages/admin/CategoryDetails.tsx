@@ -1,5 +1,5 @@
 import { ArrowLeft, BookOpen, Calendar, Hash } from "lucide-react";
-import { useParams } from "react-router-dom";
+import {  useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getCategoryById } from "@/api/adminApi";
 import { Spinner } from "@/components/ui/spinner";
@@ -53,6 +53,7 @@ const formatDate = (dateString: string) => {
 const CategoryDetails = () => {
   const { id } = useParams();
   const [category, setCategory] = useState<Category | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCategory = async () => {
@@ -78,7 +79,10 @@ const CategoryDetails = () => {
     <div className="p-4 md:p-6">
       {/* Page Header with Back Button */}
       <div className="flex items-center mb-6">
-        <button className="flex items-center justify-center p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <button
+        onClick={() => navigate(-1)}
+        
+        className="flex items-center justify-center p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <ArrowLeft className="w-5 h-5 mr-1.5" />
           Back to Categories
         </button>

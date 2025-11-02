@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import Pagination from "@/components/ui/Pagination";
 import { Spinner } from "@/components/ui/spinner";
 
 export default function TestPage() {
@@ -19,16 +21,21 @@ export default function TestPage() {
         </button>
       </div>
       <Button>ahel</Button>
-      <Button variant={"destructive"}>ahel</Button>
-      <Button variant={"secondary"}>ahel</Button>
-      <Button variant={"ghost"}>ahel</Button>
-      <Button variant={"link"}>ahel</Button>
-      <Button variant={"admin"}>ahel</Button>
+      <Button variant={"destructive"}>destructive</Button>
+      <Button variant={"secondary"}>second</Button>
+      <Button variant={"ghost"}>ghost</Button>
+      <Button variant={"link"}>link</Button>
+      <Button variant={"admin"}>admin</Button>
       <Button >
       </Button>
       <Spinner />
       </div>
-      <Spinner className="size-8" />
+      <LoadingSpinner className="size-8" />
+       <Pagination
+        currentPage={1}
+        totalPages={2}
+        onPageChange={() =>{}}
+      />
     </>
     );
 }

@@ -1,21 +1,29 @@
 "use client"
 
-// src/components/OtpVerificationModal.tsx
-import type React from "react"
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { X } from "lucide-react"
 
 interface Props {
   email: string
   onClose: () => void
   onVerify: (otp: string) => void
-  otpError: string | null
+  otpError?: string | null
+  purpose?: "register" | "reset" // 👈 makes it reusable
+  onResend?: () => void // 👈 optional resend handler
 }
 
-const OtpVerificationModal: React.FC<Props> = ({ email, onClose, onVerify, otpError }) => {
+const OtpVerificationModal: React.FC<Props> = ({
+  email,
+  onClose,
+  onVerify,
+  otpError,
+  purpose = "register",
+  onResend,
+}) => {
   const [otp, setOtp] = useState<string[]>(new Array(6).fill(""))
   const [timer, setTimer] = useState(60)
 
+  // countdown
   useEffect(() => {
     if (timer > 0) {
       const interval = setInterval(() => setTimer((t) => t - 1), 1000)
@@ -23,6 +31,7 @@ const OtpVerificationModal: React.FC<Props> = ({ email, onClose, onVerify, otpEr
     }
   }, [timer])
 
+  // OTP input handler
   const handleChange = (value: string, index: number) => {
     if (/^[0-9]?$/.test(value)) {
       const newOtp = [...otp]
@@ -36,12 +45,28 @@ const OtpVerificationModal: React.FC<Props> = ({ email, onClose, onVerify, otpEr
     }
   }
 
+  // Verify button click
   const handleVerify = () => {
     const code = otp.join("")
-    if (code.length === 6) {
-      onVerify(code)
+    if (code.length === 6) onVerify(code)
+  }
+
+  // Resend handler
+  const handleResend = () => {
+    if (timer === 0 && onResend) {
+      setOtp(new Array(6).fill(""))
+      setTimer(60)
+      onResend()
     }
   }
+
+  // Heading and message text adjust based on purpose
+  const headingText =
+    purpose === "reset" ? "Verify OTP to Reset Password" : "Verify Your Email"
+  const messageText =
+    purpose === "reset"
+      ? `We’ve sent a 6-digit verification code to your email ${email} to confirm your password reset.`
+      : `We’ve sent a 6-digit verification code to your email ${email}.`
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -55,7 +80,12 @@ const OtpVerificationModal: React.FC<Props> = ({ email, onClose, onVerify, otpEr
 
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-8 h-8 text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -64,12 +94,13 @@ const OtpVerificationModal: React.FC<Props> = ({ email, onClose, onVerify, otpEr
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">Verify Your Email</h2>
-          <p className="text-muted-foreground">
-            We've sent a 6-digit verification code to <span className="font-medium text-foreground">{email}</span>
-          </p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            {headingText}
+          </h2>
+          <p className="text-muted-foreground">{messageText}</p>
         </div>
-        <div>{otpError && <p className="text-red-500">{otpError}</p>}</div>
+
+        {otpError && <p className="text-red-500 text-center mb-3">{otpError}</p>}
 
         {/* OTP inputs */}
         <div className="flex gap-3 mb-6 justify-center">
@@ -86,9 +117,22 @@ const OtpVerificationModal: React.FC<Props> = ({ email, onClose, onVerify, otpEr
           ))}
         </div>
 
-        {timer > 0 && (
+        {timer > 0 ? (
           <p className="text-muted-foreground text-sm text-center mb-6">
-            Resend code in <span className="font-medium text-foreground">{timer.toString().padStart(2, "0")}s</span>
+            Resend code in{" "}
+            <span className="font-medium text-foreground">
+              {timer.toString().padStart(2, "0")}s
+            </span>
+          </p>
+        ) : (
+          <p className="text-center text-sm text-muted-foreground mb-6">
+            Didn’t receive the code?{" "}
+            <button
+              onClick={handleResend}
+              className="text-primary hover:underline font-medium"
+            >
+              Resend
+            </button>
           </p>
         )}
 
@@ -104,10 +148,6 @@ const OtpVerificationModal: React.FC<Props> = ({ email, onClose, onVerify, otpEr
         >
           Verify & Continue
         </button>
-
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Didn't receive the code? <button className="text-primary hover:underline font-medium">Resend</button>
-        </p>
       </div>
     </div>
   )

@@ -29,3 +29,28 @@ export async function sendSignupOtp(to: string, otp: string) {
   }
 }
 
+///////////////////////////////////reset password email///////////////////////////////////////
+// ... (your existing transporter and sendSignupOtp function) ...
+
+// --- ADD THIS NEW FUNCTION ---
+export async function sendPasswordResetOtp(to: string, otp: string) {
+  try {
+    return await transporter.sendMail({
+      from: `"Blueboard" <${process.env.MAIL_FROM}>`,
+      to,
+      subject: "Your Password Reset Code",
+      text: `Your one-time code for password reset is: ${otp}\nThis code expires in 10 minutes.`,
+      html: `
+        <div style="font-family:Arial,sans-serif">
+          <h2>Password Reset Request</h2>
+          <p>Your one-time code to reset your password is:</p>
+          <p style="font-size:28px;letter-spacing:8px;"><strong>${otp}</strong></p>
+          <p>This code expires in 10 minutes. If you didn't request this, ignore this email.</p>
+        </div>`,
+    });
+  } catch (err) {
+    console.error("Error sending Reset OTP email:", err);
+    throw new Error("Failed to send reset OTP email");
+  }
+}
+
