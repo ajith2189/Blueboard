@@ -11,8 +11,6 @@ export const adminLoginApi = async (Credentials: LoginCredentials) => {
     const response = await axiosInstance.post("/auth/admin/login", Credentials);
     return response.data;
   } catch (error) {
-
-    // instance of AxiosError will let know the TS that this may be any kind of error
     if (error instanceof AxiosError && error.response) {
       throw error.response.data;
     }

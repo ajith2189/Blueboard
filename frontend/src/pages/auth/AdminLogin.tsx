@@ -1,11 +1,11 @@
 import { Shield, Mail, ArrowRight } from "lucide-react";
-import InputField from "@/components/userComponents/InputField";
+import InputField from "@/components/ui/InputField";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { loginSuccessful } from "@/features/authSlice";
-import { adminLoginApi } from "@/api/admin/adminLoginApi";
+import { adminLoginApi } from "@/api/adminLoginApi";
 
 interface AdminLoginFormData {
   email: string;
@@ -29,20 +29,20 @@ export default function AdminLogin() {
 
     try {
       const response = await adminLoginApi(data);
-      console.log("user data received", response);
 
       const userPayload = {
-        user: {
-          userId: response.userId,
-          name: response.name,
-          email: response.email,
-        },
-        accessToken: response.accessToken || "", // if your API adds token later
-      };
+  user: {
+    userId: response.user?._id,
+    name: response.user?.name,
+    email: response.user?.email,
+    role: response.user?.role,
+  },
+  accessToken: response.accessToken || "",
+};
 
       // setting user data in the store
-      dispatch(loginSuccessful(userPayload));
-      navigate("/admin/dashboard"); // Redirect to dashboard on successful login
+      await dispatch(loginSuccessful(userPayload));
+      navigate("/admin/"); // Redirect to dashboard on successful login
 
       // Handle successful login - redirect to dashboard
     } catch (error) {

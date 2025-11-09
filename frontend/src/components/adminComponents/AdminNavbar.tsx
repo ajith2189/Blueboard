@@ -26,7 +26,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ darkMode, setDarkMode }) => {
           </h1>
         </div>
 
-        {/* Search */}
+        {/*Change to  SearchINput component */}
         <div className="flex-1 max-w-2xl mx-8">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />

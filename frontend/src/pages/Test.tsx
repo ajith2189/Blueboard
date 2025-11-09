@@ -1,6 +1,13 @@
+import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import PaginationComponent from "@/components/adminComponents/PaginationComponent";
+import { Spinner } from "@/components/ui/spinner";
+
 export default function TestPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500">
+    <>
+      {/* // <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500"> */}
+      <div>
       <div className="bg-white p-10 rounded-2xl shadow-xl text-center">
         <h1 className="text-4xl font-bold text-gray-800 mb-4">
           🚀 Tailwind is Working!
@@ -13,6 +20,24 @@ export default function TestPage() {
           Test Button
         </button>
       </div>
-    </div>
-  );
+      <Button>ahel</Button>
+      <Button variant={"destructive"}>destructive</Button>
+      <Button variant={"secondary"}>second</Button>
+      <Button variant={"ghost"}>ghost</Button>
+      <Button variant={"link"}>link</Button>
+      <Button variant={"admin"}>admin</Button>
+      <Button >
+      </Button>
+      <Spinner />
+      </div>
+      <LoadingSpinner className="size-8" />
+       <PaginationComponent
+        currentPage={1}
+        totalPages={2}
+        onPageChange={() =>{}}
+      />
+    </>
+    );
 }
+  
+
