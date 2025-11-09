@@ -59,3 +59,12 @@ export const verifyToken = (token: string, expectedPurpose?: string) => {
     throw new Error("Invalid or expired token");
   }
 };
+
+
+export const verifyRefreshToken = (token: string) => {
+  try {
+    return jwt.verify(token, REFRESH_SECRET);
+  } catch {
+    throw new Error("Invalid or expired refresh token");
+  }
+};

@@ -1,3 +1,4 @@
+// import { userGoogleLogin } from '@/api/userApi';
 import axiosInstance from "@/utils/axios";
 import { AxiosError } from "axios";
   
@@ -8,9 +9,10 @@ interface RegisterCredentials {
   name: string;
   email: string;
   password: string;
+  role?: string;
 }
 
-export const RegisterApi = async (Credentials: RegisterCredentials) => {
+export const userRegisterApi = async (Credentials: RegisterCredentials,) => {
   try {
     const response = await axiosInstance.post("/auth/register", Credentials);
     return response.data;
@@ -24,38 +26,12 @@ export const RegisterApi = async (Credentials: RegisterCredentials) => {
   }
 };
 
-
-// export const forgotPasswordApi = async (email: string) => {
-//   try {
-//     const response = await axiosInstance.post("/auth/forgot-password-otp", { email });  
-//     return response.data;
-
-//   } catch (error) {
-//     if (error instanceof AxiosError && error.response) {
-//       throw error.response.data;
-//     }
-//     throw error;
-//   }
-// };
-
-// export const resetPasswordApi = async (token: string, newPassword: string) => {
-//   try {
-//     const response = await axiosInstance.post("/auth/reset-password", { token, newPassword });  
-//     return response.data;
-
-//   } catch (error) {
-//     if (error instanceof AxiosError && error.response) {
-//       throw error.response.data;
-//     }   
-//     throw error;
-//   }   
-// };
-
 // ---------------------------Google Sign Up--------------------------- 
 
-export const googleSignUp = async (credential: string) => {
+export const usergoogleSignUp = async (credential:any,) => {
   try {
-    const response = await axiosInstance.post("/auth/google", { credential });
+
+    const response = await axiosInstance.post("/auth/google", { credential});
     return response.data;
   } catch (error) {
     if (error instanceof AxiosError && error.response) {
@@ -87,7 +63,7 @@ interface LoginCredentials {
   password: string;
 }
 
-export const LoginApi = async (Credentials: LoginCredentials) => {
+export const userLoginApi = async (Credentials: LoginCredentials) => {
   try {
     const response = await axiosInstance.post("/auth/login", Credentials);
     return response.data;
@@ -115,3 +91,8 @@ export const verifyResetOtpApi = async (email: string, otp: string) => {
 export const resetPasswordApi = async (resetToken: string, password: string) => {
   return axiosInstance.post("/auth/reset-password", { resetToken, password });
 };
+
+
+export const TutorLoginApi = async (Credentials: LoginCredentials) => {
+    return  await axiosInstance.post("/auth/tutor/login", Credentials);
+}

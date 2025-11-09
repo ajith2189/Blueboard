@@ -16,7 +16,8 @@ import {
 } from "../services/otp.service.js";
 import { sendPasswordResetOtp, sendSignupOtp } from "../utils/email.js";
 import { OAuth2Client } from "google-auth-library";
-import { generateToken, verifyToken } from "../utils/jwt.js";
+import { generateToken, verifyToken, verifyRefreshToken } from "../utils/jwt.js";
+import { string } from "joi";
 
 //----------------------------------REGISTER--------------------------------------------
 const maskEmail = (email: string) => {
@@ -28,11 +29,11 @@ export const userRegister = async (req: Request, res: Response) => {
   console.log("user register called");
   
   try {
-    const { name, email, password,  } = req.body;
+    const { name, email, password,role  } = req.body;
     // .lean will help to search without updating or saving data which is much faster
     const existing = await User.findOne({ email: email.toLowerCase() }).lean();
     if (existing) {
-      return res.status(409).json({ error: "User already exists." });
+      return res.status(409).json({ message : "User already exists." });
     }
     //hashing the password
     const passwordHash = await bcrypt.hash(password, 12);
@@ -40,7 +41,7 @@ export const userRegister = async (req: Request, res: Response) => {
     console.log("the otp is", otp);
 
     // saving the data temporary in redis for otp verification
-    await putPendingSignup({ name, email, passwordHash, otp });
+    await putPendingSignup({ name, email, passwordHash, otp, role });
     await sendSignupOtp(email, otp);
 
     return res.status(202).json({
@@ -50,7 +51,7 @@ export const userRegister = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("Register Error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -58,7 +59,7 @@ export const userRegister = async (req: Request, res: Response) => {
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const googleSignUp = async (req: Request, res: Response) => {
-  const { credential } = req.body;
+  const { credential, role} = req.body;
 
   try {
     // ✅ Verify ID token with Google
@@ -82,7 +83,7 @@ export const googleSignUp = async (req: Request, res: Response) => {
         email,
         googleId,
         picture,
-        role: "user",
+        role,
         createdAt: new Date(),
       });
       await user.save();
@@ -157,6 +158,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
     name: rec.name,
     email: rec.email,
     password: rec.passwordHash,
+    role: rec.role || "user",
     emailVerified: true,
   });
 
@@ -245,7 +247,7 @@ console.log("login successful");
 
     // Send response with user data (excluding password)
     return res.status(201).json({
-      message: "User registered successfully",
+      message: "User Login successfully",
       user: {
         _id: user._id,
         name: user.name,
@@ -297,11 +299,12 @@ console.log(" Admin login successful");
 
     // Send response with user data (excluding password)
     return res.status(201).json({
-      message: "User registered successfully",
+      message: "admin Login successful",
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role : user.role,
       },
       accessToken,
     });
@@ -309,9 +312,7 @@ console.log(" Admin login successful");
 
 //--------------------------------------reset Password------------------------------------------
 
-
 //-----------------------------VERIFY OTP AND RESET PASSWORD----------------------------------
-
 
 const forgotPasswordSchema = z.object({
   email: z.email("Invalid email format"),
@@ -465,3 +466,82 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
+
+export const refreshToken = async (req :Request, res:Response) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+      return res.status(401).json({ message: "No refresh token found" });
+    }
+
+    // Verify refresh token
+    const decoded = verifyRefreshToken(refreshToken);
+
+    // Generate new access token
+    const newAccessToken = generateToken(decoded.userId , decoded.userRole);
+
+    return res.status(200).json({ accessToken: newAccessToken });
+  } catch (error) {
+    console.error("Refresh token failed:", error.message);
+    return res.status(403).json({ message: "Invalid or expired refresh token" });
+  }
+};
+
+
+export const tutorLogin = async (req: Request, res: Response) => {
+  console.log("tutor login called");
+  try {
+    //  Validate input
+    const parse = LoginSchema.safeParse(req.body);
+    if (!parse.success)
+      return res.status(400).json({ error: "Invalid input" });
+
+    const { email, password } = parse.data;
+    console.log("Parsed tutor login data:", { email, password });
+
+    //  Check if tutor exists
+  const tutor = await User.findOne({ email: email.toLowerCase() }).lean();
+    if (!tutor)
+      return res.status(404).json({ error: "Tutor not found" });
+
+    if (tutor.role !== "tutor") {
+      return res.status(403).json({ error: "Access denied not a tutor" });
+    }
+    // Validate password
+    const isValid = await bcrypt.compare(password, tutor.password ?? "");
+    if (!isValid)
+      return res.status(401).json({ error: "Invalid password" });
+
+    console.log("Tutor login successful");
+
+    const refreshToken = generateToken(tutor._id.toString(), "refresh");
+
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none", // required for cross-site cookies
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    const accessToken = generateToken(tutor._id.toString(), tutor.role);
+    console.log(" JWT accessToken generated for tutor:", accessToken);
+
+    // Send response (exclude password)
+    return res.status(200).json({
+      message: "Tutor logged in successfully",
+      user: {
+        _id: tutor._id,
+        name: tutor.name,
+        email: tutor.email,
+        role: tutor.role,
+      },
+      accessToken,
+    });
+  } catch (error) {
+    console.error("Error during tutor login:", error);
+    return res.status(500).json({
+      error: "Server error during tutor login",
+      details: (error as Error).message,
+    });
+  }
+};

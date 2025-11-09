@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import Pagination from "@/components/ui/Pagination";
+import PaginationComponent from "@/components/adminComponents/PaginationComponent";
 import { Spinner } from "@/components/ui/spinner";
 
 export default function TestPage() {
@@ -31,7 +31,7 @@ export default function TestPage() {
       <Spinner />
       </div>
       <LoadingSpinner className="size-8" />
-       <Pagination
+       <PaginationComponent
         currentPage={1}
         totalPages={2}
         onPageChange={() =>{}}

@@ -24,9 +24,12 @@ const authSlice = createSlice({
     },
     setAccessToken : (state,  action: PayloadAction<{ accessToken: string }>) => {
       state.accessToken = action.payload?.accessToken || null;
-    }
+    },
+     updateProfile: (state, action: PayloadAction<Record<string, unknown>>) => {
+    state.user = { ...(state.user as Record<string, unknown>), ...action.payload };
+  },
   },
 });
 
-export const { loginSuccessful, logout, setAccessToken } = authSlice.actions;
+export const { loginSuccessful, logout, setAccessToken,updateProfile } = authSlice.actions;
 export default authSlice.reducer; // ✅ important

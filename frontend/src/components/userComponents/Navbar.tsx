@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from  "react-redux";
 import { useNavigate } from "react-router-dom";
 import { LogOut, User, LayoutDashboard } from "lucide-react";
 import { logout } from "../../features/authSlice"; 
+import { Button } from "../ui/button";
 
 // --- Placeholder Types ---
 // Since we can't access your local "@/store" file, these types are defined
@@ -92,16 +93,17 @@ export default function Navbar() {
                     <p className="text-sm font-semibold text-gray-800 truncate">{user.name}</p>
                     <p className="text-xs text-gray-500 truncate">{user.email}</p>
                   </div>
-                  <a
+                  <Button
+                  variant={"ghost2"}
                     href="/dashboard"
                     className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     <LayoutDashboard size={16} />
                     Dashboard
-                  </a>
+                  </Button>
                   <a
-                    href="/profile"
-                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => navigate("/profile")}
+                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover: bg-gray-100"
                   >
                     <User size={16} />
                     Profile

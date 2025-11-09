@@ -1,8 +1,9 @@
 import { ArrowLeft, BookOpen, Calendar, Hash } from "lucide-react";
-import {  useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getCategoryById } from "@/api/adminApi";
 import { Spinner } from "@/components/ui/spinner";
+import { format } from "date-fns";
 // import { getCategoryById } from "@/api/categoryApi";
 
 // This interface must match the one in CategoryManagement.tsx
@@ -37,18 +38,28 @@ const mockCourses = [
 ];
 
 // Helper to format the date
-const formatDate = (dateString: string) => {
-  try {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return "Invalid Date";
-  }
-};
+// const formatDate = (
+//   dateString: string,
+//   locale: string = "en-US",
+//   options: Intl.DateTimeFormatOptions = {}
+// ) => {
+//   // Your original options, used as a default
+//   const defaultOptions: Intl.DateTimeFormatOptions = {
+//     year: "numeric",
+//     month: "long",
+//     day: "numeric",
+//   };
+
+//   try {
+//     return new Date(dateString).toLocaleString(locale, {
+//       ...defaultOptions, // Start with defaults
+//       ...options, // Override with any options you pass in
+//     });
+//   } catch (error) {
+//     console.error("Error formatting date:", error);
+//     return "Invalid Date";
+//   }
+// };
 
 const CategoryDetails = () => {
   const { id } = useParams();
@@ -80,9 +91,9 @@ const CategoryDetails = () => {
       {/* Page Header with Back Button */}
       <div className="flex items-center mb-6">
         <button
-        onClick={() => navigate(-1)}
-        
-        className="flex items-center justify-center p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          onClick={() => navigate(-1)}
+          className="flex items-center justify-center p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        >
           <ArrowLeft className="w-5 h-5 mr-1.5" />
           Back to Categories
         </button>
@@ -133,7 +144,7 @@ const CategoryDetails = () => {
                 </h3>
                 <p className="flex items-center text-gray-800 dark:text-gray-200">
                   <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                  {formatDate(category.created_at)}
+                  {format(new Date(category.updatedAt), "PPP")}{" "}
                 </p>
               </div>
             </div>

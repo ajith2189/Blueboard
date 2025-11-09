@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { BookOpen, Send } from "lucide-react";
-import InputField from "@/components/userComponents/InputField";
+import InputField from "@/components/ui/InputField";
 import { useNavigate } from "react-router-dom";
 import { forgotPasswordApi, verifyResetOtpApi } from "@/api/authApi";
 import OtpVerificationModal from "@/components/userComponents/OtpVerificationModal";

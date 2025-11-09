@@ -16,6 +16,7 @@ type PendingSignup = {
   otpHash: string;
   name: string;
   email: string;
+  role?: string;
   passwordHash: string;
   attemptsLeft: number;  // e.g., 5
   resentCount: number;   // e.g., max 3
@@ -23,13 +24,14 @@ type PendingSignup = {
 };
 
 export async function putPendingSignup(
-  data: { name: string; email: string; passwordHash: string; otp: string }
+  data: { name: string; email: string; passwordHash: string; otp: string, role?:string }
 ) {
   const otpHash = await bcrypt.hash(data.otp, 10);
   const record: PendingSignup = {
     otpHash,
     name: data.name,
     email: data.email.toLowerCase(),
+    role: data.role,
     passwordHash: data.passwordHash,
     attemptsLeft: 5,
     resentCount: 0,

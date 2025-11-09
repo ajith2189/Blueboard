@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { PaginatedResponse } from "@/api/adminApi";
 
 interface FetchParams {
@@ -7,22 +7,24 @@ interface FetchParams {
   limit?: number;
   role?: string;
 }
-//the params is used to define the type of params that can be passed to the fetchFunction
-export function usePaginatedFetch<T>( fetchFunction: (params?: FetchParams) => Promise<PaginatedResponse<T>>,
-  initialParams?: Partial<FetchParams>)  {
+
+export function usePaginatedFetch<T>(
+  fetchFunction: (params?: FetchParams) => Promise<PaginatedResponse<T>>,
+  initialParams: Partial<FetchParams> = {}
+) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialParams.page || 1);
   const [totalPages, setTotalPages] = useState(1);
+  const [params, setParams] = useState<Partial<FetchParams>>(initialParams);
 
-
-// this pareams i s used to refetch the data when needed
-  const fetchData = async (reFetchParams?: Partial<FetchParams>) => {
+  // ✅ Main fetch function - single source of truth
+  const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      // the page is needed because the page state is updated when the user changes the page
-      const response = await fetchFunction({ ...initialParams, page, ...reFetchParams });
+      const response = await fetchFunction({ ...params, page });
       setData(response.data);
       setTotalPages(response.pagination.totalPages);
     } catch (err: unknown) {
@@ -30,11 +32,31 @@ export function usePaginatedFetch<T>( fetchFunction: (params?: FetchParams) => P
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchFunction, params, page]);
 
   useEffect(() => {
     fetchData();
-  }, [page]);
+  }, [fetchData]);
 
-  return { data, loading, error, totalPages, page, setPage, refetch: fetchData };
+  // ✅ Update search/filter params AND reset to page 1
+  const updateParams = useCallback((newParams: Partial<FetchParams>) => {
+    setParams(prev => ({ ...prev, ...newParams }));
+    setPage(1); // Always reset to first page on filter change
+  }, []);
+
+  // ✅ Refetch with current params (useful for manual refresh)
+  const refetch = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return {
+    data,
+    loading,
+    error,
+    page,
+    totalPages,
+    setPage,
+    updateParams, 
+    refetch,       
+  };
 }

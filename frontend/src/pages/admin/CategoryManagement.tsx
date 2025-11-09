@@ -1,15 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Pencil, Trash2, Eye, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import Pagination from "@/components/ui/Pagination";
+import PaginationComponent from "@/components/adminComponents/PaginationComponent";
 import SearchInput from "@/components/ui/SearchInput";
 import EditCategoryDialog from "@/components/ui/EditCategoryDialog";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
-import { useDebouncedSearch } from "@/hooks/useDebouncedSearch";
 import {
   getAllCategories,
   addCategory,
@@ -29,7 +28,6 @@ interface Category {
 const CategoryManagement: React.FC = () => {
   const navigate = useNavigate();
 
-  // ✅ Pagination Hook
   const {
     data: categories,
     loading,
@@ -38,25 +36,29 @@ const CategoryManagement: React.FC = () => {
     page,
     setPage,
     refetch,
+    updateParams
   } = usePaginatedFetch<Category>(getAllCategories, { limit: 3 });
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredCategory, setFilteredCategory] = useState<Category[]>([]);
 
-  // ✅ Debounced Search
-  const debouncedSearch = useDebouncedSearch(async (term: string) => {
-    setPage(1);
-    refetch({ limit: 3, search: term });
-  });
-
+  // ✅ Debounced search
   useEffect(() => {
-    if (searchTerm) debouncedSearch(searchTerm);
-    else setFilteredCategory([]);
-  }, [searchTerm]);
+    const delay = setTimeout(() => {
+      updateParams({ search: searchTerm || undefined });
+    }, 600); 
 
-  const displayedCategory = searchTerm ? filteredCategory : categories;
+    return () => clearTimeout(delay);
+  }, [searchTerm, updateParams]);
 
-  // ✅ Handlers
+  // ✅ Stable handlers using useCallback
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchTerm("");
+  }, []);
+
   const handleAddCategory = async (data: {
     name: string;
     description: string;
@@ -64,7 +66,7 @@ const CategoryManagement: React.FC = () => {
     try {
       const response = await addCategory(data);
       toast.success(response.message);
-      refetch(); // Refresh list
+      refetch();
     } catch {
       toast.error("Error adding category. Please try again.");
     }
@@ -93,11 +95,13 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
-  if (loading)
+  // ✅ CRITICAL: Only show full-screen spinner on INITIAL load
+  const isInitialLoading = loading && categories.length === 0 && !searchTerm;
+  
+  if (isInitialLoading)
     return <Spinner className="size-8 text-blue-500 justify-center" />;
   if (error) return <p className="text-red-500">Error loading categories.</p>;
 
-  // ✅ UI
   return (
     <div className="p-4 md:p-6">
       <header className="mb-6">
@@ -110,12 +114,12 @@ const CategoryManagement: React.FC = () => {
       </header>
 
       <div className="rounded-3xl bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 gap-4">
           <SearchInput
             value={searchTerm}
-            onChange={setSearchTerm}
-            onClear={() => setSearchTerm("")}
-            placeholder="Search category..."
+            onChange={handleSearch}
+            onClear={handleClearSearch}
+            placeholder="Search categories..."
           />
 
           <EditCategoryDialog
@@ -128,14 +132,30 @@ const CategoryManagement: React.FC = () => {
           />
         </div>
 
-        {displayedCategory.length === 0 ? (
-          <p className="text-gray-500 text-center">No categories found.</p>
+        {/* ✅ Inline loading indicator - doesn't unmount input */}
+        {loading && (
+          <div className="flex justify-center py-4">
+            <div className="flex items-center gap-2 text-gray-500">
+              <Spinner className="size-5 text-blue-500" />
+              <span className="text-sm">Searching...</span>
+            </div>
+          </div>
+        )}
+
+        {!loading && categories.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">
+              {searchTerm 
+                ? `No categories found matching "${searchTerm}"`
+                : "No categories found. Add your first category to get started!"}
+            </p>
+          </div>
         ) : (
           <div className="space-y-3">
-            {displayedCategory.map((category) => (
+            {categories.map((category) => (
               <div
                 key={category.category_id}
-                className="flex flex-col sm:flex-row justify-between sm:items-center p-4 rounded-2xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700"
+                className="flex flex-col sm:flex-row justify-between sm:items-center p-4 rounded-2xl bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200"
               >
                 <p className="font-semibold text-lg text-gray-800 dark:text-gray-200 mb-3 sm:mb-0">
                   {category.name}
@@ -170,7 +190,7 @@ const CategoryManagement: React.FC = () => {
                     icon={<Trash2 />}
                     triggerText="Delete"
                     title="Confirm Deletion"
-                    description={`Delete ${category.name}?`}
+                    description={`Delete "${category.name}"?`}
                     variant="destructive"
                     onConfirm={() => handleDeleteCategory(category.category_id)}
                   />
@@ -182,7 +202,7 @@ const CategoryManagement: React.FC = () => {
       </div>
 
       {totalPages > 1 && (
-        <Pagination
+        <PaginationComponent
           currentPage={page}
           totalPages={totalPages}
           onPageChange={setPage}

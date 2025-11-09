@@ -22,7 +22,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const [data, totalItems] = await Promise.all([
-      User.find(query).sort({ created_at: -1 }).skip(skip).limit(Number(limit)),
+      User.find(query).sort({ createdAt: -1}).skip(skip).limit(Number(limit)),
       User.countDocuments(query),
     ]);
 
@@ -75,7 +75,7 @@ export const getAllCategories = async (req: Request, res: Response) => {
 
     const [data, totalItems] = await Promise.all([
       Category.find(query)
-        .sort({ created_at: 1 })
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit)),
       Category.countDocuments(query),

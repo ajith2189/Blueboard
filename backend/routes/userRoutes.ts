@@ -1,12 +1,8 @@
 import express,{ Request, Response }  from "express";
-import { userRegister } from "../controllers/authControllers.js";
+import { editProfile } from "../controllers/userController.js";
 const userRoutes = express.Router();
 
-userRoutes.post("/register", userRegister);
+userRoutes.put("/edit/:userId", editProfile);
 
-// this need to written
-// userRoutes.post("/login", (req:Request, res:Response) => {
-//     res.status(200).json({ message: "User logged in" });
-// });
 
 export default userRoutes;
