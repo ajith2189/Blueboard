@@ -50,9 +50,6 @@ export default function App() {
           <Route path="/tutor/test" element={<TestPage/>}/>
         </Route>
 
-
-        
-
         {/* Protected Admin Routes */}
         <Route
           path="/admin"
