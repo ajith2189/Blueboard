@@ -10,7 +10,6 @@ export default function UserLogin() {
       onGoogleLogin={usergoogleSignUp}
       roleRedirects={{ user: "/", tutor: "/tutor" }}
     />
-
   );
 }
 

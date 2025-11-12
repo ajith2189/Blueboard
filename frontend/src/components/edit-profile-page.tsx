@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Upload, Save, ArrowLeft } from "lucide-react"
+import { Upload, Save } from "lucide-react"
 import { useSelector } from "react-redux"
 import noProfilePic from "../../public/edit_dp.png"
 
@@ -42,9 +42,9 @@ export default function EditProfilePage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex items-center gap-3">
-          <button className="p-2 hover:bg-card rounded-lg transition-colors">
+          {/* <button className="p-2 hover:bg-card rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-          </button>
+          </button> */}
           <div>
             <h1 className="text-3xl font-bold text-foreground">Edit Profile</h1>
             <p className="text-muted-foreground mt-1">Update your learning profile and preferences</p>

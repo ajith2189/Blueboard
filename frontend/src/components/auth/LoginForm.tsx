@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { BookOpen, Users, Award, CheckCircle, ArrowRight, Lock, Mail } from "lucide-react";
+import {
+  BookOpen,
+  Users,
+  Award,
+  CheckCircle,
+  ArrowRight,
+  Lock,
+  Mail,
+} from "lucide-react";
 import InputField from "@/components/ui/InputField";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+// import { jwtDecode } from "jwt-decode";
 import { useDispatch } from "react-redux";
 import { loginSuccessful } from "@/features/authSlice";
 import { GoogleLogin } from "@react-oauth/google";
@@ -44,13 +52,14 @@ export default function LoginForm({
 
     try {
       const response = await onLogin(data);
-      console.log("the response is ",response);
+      console.log("the response is ", response);
 
       const userPayload = {
         user: {
-          userId: response.user._id,
-          name: response.user.name,
-          email: response.user.email,
+          userId: response.data.user._id,
+          name: response.data.user.name,
+          email: response.data.user.email,
+          role: response.data.user?.role,
         },
         accessToken: response.accessToken || "",
       };
@@ -59,7 +68,7 @@ export default function LoginForm({
 
       // const token: any = jwtDecode(response.accessToken);
       // const redirectPath = ;
-      navigate((role) === "user" ? "/" : "/tutor");
+      navigate(role === "user" ? "/" : "/tutor/dashboard");
     } catch (err) {
       console.error("Login failed:", err);
       setError("Login failed. Please check your credentials and try again.");
@@ -68,9 +77,9 @@ export default function LoginForm({
     }
   };
 
-
-
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+  const handleGoogleSuccess = async (
+    credentialResponse: CredentialResponse
+  ) => {
     if (!credentialResponse.credential || !onGoogleLogin) return;
 
     try {
@@ -106,7 +115,9 @@ export default function LoginForm({
                 <BookOpen className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground font-mono">Blueboard</h1>
+                <h1 className="text-2xl font-bold text-foreground font-mono">
+                  Blueboard
+                </h1>
                 <p className="text-sm text-muted-foreground">
                   Professional E-Learning Platform
                 </p>
@@ -138,12 +149,17 @@ export default function LoginForm({
 
               <h2 className="text-4xl font-bold text-foreground mb-6 leading-tight">
                 Welcome Back to
-                <span className="text-primary block">{role === "user"?"Your Learning Journey":"Your tutor journey"}</span>
+                <span className="text-primary block">
+                  {role === "user"
+                    ? "Your Learning Journey"
+                    : "Your tutor journey"}
+                </span>
               </h2>
 
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
                 Continue your professional development with personalized
-                courses, expert mentorship, and industry-recognized certifications.
+                courses, expert mentorship, and industry-recognized
+                certifications.
               </p>
 
               <div className="space-y-4">
@@ -166,7 +182,9 @@ export default function LoginForm({
           <div className="w-full lg:w-1/2 p-8 lg:p-12">
             <div className="max-w-md mx-auto">
               <div className="text-center mb-8">
-                <h3 className="text-3xl font-bold text-foreground mb-3 font-mono">{role === "user"?"Welcome back":"Tutor login"}</h3>
+                <h3 className="text-3xl font-bold text-foreground mb-3 font-mono">
+                  {role === "user" ? "Welcome back" : "Tutor login"}
+                </h3>
                 <p className="text-muted-foreground">
                   Sign in to access your personalized learning dashboard
                 </p>
@@ -190,7 +208,10 @@ export default function LoginForm({
                     </svg>
                     <span className="text-sm font-medium">{error}</span>
                   </div>
-                  <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 transition">
+                  <button
+                    onClick={() => setError(null)}
+                    className="text-red-400 hover:text-red-600 transition"
+                  >
                     ✕
                   </button>
                 </div>
@@ -254,50 +275,53 @@ export default function LoginForm({
                   )}
                 </button>
               </form>
-              {role !== "admin" && (<>
-              <div className="my-8 flex items-center gap-4">
-                <div className="flex-1 h-px bg-border"></div>
-                <span className="text-sm text-muted-foreground bg-background px-3">
-                  Or continue with
-                </span>
-                <div className="flex-1 h-px bg-border"></div>
-              </div>
-
-              {onGoogleLogin && (
-                <div className="flex justify-center mt-4">
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => console.log("Google Sign In Failed")}
-                    useOneTap
-                  />
-                </div>
-              )}
-
-              <p className="text-center text-sm text-muted-foreground mt-8">
-                Don't have an account?{" "}
-                <a
-                  onClick={() => navigate("/register")}
-                  className="text-primary hover:underline font-medium cursor-pointer"
-                >
-                  Create one here
-                </a>
-              </p>
-
-              <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-border/50">
-                <div className="flex items-start gap-3">
-                  <Lock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-foreground mb-1">
-                      Secure Login
-                    </p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Your login is protected with enterprise-grade security. We use encrypted connections and never store your password in plain text.
-                    </p>
+              {role !== "admin" && (
+                <>
+                  <div className="my-8 flex items-center gap-4">
+                    <div className="flex-1 h-px bg-border"></div>
+                    <span className="text-sm text-muted-foreground bg-background px-3">
+                      Or continue with
+                    </span>
+                    <div className="flex-1 h-px bg-border"></div>
                   </div>
-                </div>
-              </div>
 
-              </>)}
+                  {onGoogleLogin && (
+                    <div className="flex justify-center mt-4">
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => console.log("Google Sign In Failed")}
+                        useOneTap
+                      />
+                    </div>
+                  )}
+
+                  <p className="text-center text-sm text-muted-foreground mt-8">
+                    Don't have an account?{" "}
+                    <a
+                      onClick={() => navigate("/register")}
+                      className="text-primary hover:underline font-medium cursor-pointer"
+                    >
+                      Create one here
+                    </a>
+                  </p>
+
+                  <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-border/50">
+                    <div className="flex items-start gap-3">
+                      <Lock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-foreground mb-1">
+                          Secure Login
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Your login is protected with enterprise-grade
+                          security. We use encrypted connections and never store
+                          your password in plain text.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+// import { Response } from 'express';
 // import { userGoogleLogin } from '@/api/userApi';
 import axiosInstance from "@/utils/axios";
 import { AxiosError } from "axios";
@@ -64,17 +65,7 @@ interface LoginCredentials {
 }
 
 export const userLoginApi = async (Credentials: LoginCredentials) => {
-  try {
-    const response = await axiosInstance.post("/auth/login", Credentials);
-    return response.data;
-  } catch (error) {
-
-    // instance of AxiosError will let know the TS that this may be any kind of error
-    if (error instanceof AxiosError && error.response) {
-      throw error.response.data;
-    }
-    throw error;
-  }
+ return await axiosInstance.post("/auth/login", Credentials);
 };
 
 /////////////////////////////////////////reset password api//////////////////////////////////////
@@ -94,5 +85,6 @@ export const resetPasswordApi = async (resetToken: string, password: string) => 
 
 
 export const TutorLoginApi = async (Credentials: LoginCredentials) => {
-    return  await axiosInstance.post("/auth/tutor/login", Credentials);
-}
+  return await axiosInstance.post("/auth/tutor/login", Credentials);
+  }
+    

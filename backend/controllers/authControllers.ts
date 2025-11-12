@@ -9,14 +9,18 @@ import {
   deletePendingSignup,
   getPendingSignup,
   updatePendingSignup,
-  verifyResetOtp,     
+  verifyResetOtp,
   deletePendingReset,
   getPendingReset,
-  putPendingReset
+  putPendingReset,
 } from "../services/otp.service.js";
 import { sendPasswordResetOtp, sendSignupOtp } from "../utils/email.js";
 import { OAuth2Client } from "google-auth-library";
-import { generateToken, verifyToken, verifyRefreshToken } from "../utils/jwt.js";
+import {
+  generateToken,
+  verifyToken,
+  verifyRefreshToken,
+} from "../utils/jwt.js";
 import { string } from "joi";
 
 //----------------------------------REGISTER--------------------------------------------
@@ -27,13 +31,13 @@ const maskEmail = (email: string) => {
 
 export const userRegister = async (req: Request, res: Response) => {
   console.log("user register called");
-  
+
   try {
-    const { name, email, password,role  } = req.body;
+    const { name, email, password, role } = req.body;
     // .lean will help to search without updating or saving data which is much faster
     const existing = await User.findOne({ email: email.toLowerCase() }).lean();
     if (existing) {
-      return res.status(409).json({ message : "User already exists." });
+      return res.status(409).json({ message: "User already exists." });
     }
     //hashing the password
     const passwordHash = await bcrypt.hash(password, 12);
@@ -59,7 +63,7 @@ export const userRegister = async (req: Request, res: Response) => {
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const googleSignUp = async (req: Request, res: Response) => {
-  const { credential, role} = req.body;
+  const { credential, role } = req.body;
 
   try {
     // ✅ Verify ID token with Google
@@ -95,7 +99,7 @@ export const googleSignUp = async (req: Request, res: Response) => {
 
     // ✅ Issue tokens
     const accessToken = generateToken(user._id.toString(), user.role);
-    const refreshToken = generateToken(user._id.toString(),"refresh");
+    const refreshToken = generateToken(user._id.toString(), "refresh");
 
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
@@ -166,9 +170,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
   return res
     .status(201)
-    .json({ message: "Email verified. Account created.", userId: newUser._id,
-
-     });
+    .json({ message: "Email verified. Account created.", userId: newUser._id });
 };
 
 //-----------------------------RESEND-OTP-----------------------------------------------------
@@ -213,26 +215,25 @@ const LoginSchema = z.object({
 });
 
 export const userLogin = async (req: Request, res: Response) => {
+  try {
+    const parse = LoginSchema.safeParse(req.body);
 
-  const parse = LoginSchema.safeParse(req.body);
+    if (!parse.success) return res.status(400).json({ error: "Invalid input" });
+    const { email, password } = parse.data;
+    console.log("Parsed login data:", { email, password });
 
-  if (!parse.success) return res.status(400).json({ error: "Invalid input" });
-  const { email, password } = parse.data;
-  console.log("Parsed login data:", { email, password });
+    //checking user do exist
+    const user = await User.findOne({ email: email.toLowerCase() }).lean();
+    if (!user) return res.status(404).json({ error: "User not found" });
+    console.log("User found:", user);
 
-  //checking user do exist
-  const user = await User.findOne({ email: email.toLowerCase() }).lean();
-  if (!user) return res.status(404).json({ error: "User not found" });
-  console.log("User found:", user);
+    //validating the password
+    const isValid = !!(await bcrypt.compare(password, user.password ?? ""));
+    if (!isValid) return res.status(401).json({ error: "Invalid password" });
 
-  //validating the password
-  const isValid = !!await bcrypt.compare(password, user.password ?? '');
-  if (!isValid) return res.status(401).json({ error: "Invalid password" });
+    console.log("login successful");
 
-
-console.log("login successful");
-
-    const refreshToken = generateToken(user._id.toString(),"refresh");
+    const refreshToken = generateToken(user._id.toString(), "refresh");
 
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
@@ -246,7 +247,7 @@ console.log("login successful");
     console.log("🔑 JWT accessToken generated:", accessToken);
 
     // Send response with user data (excluding password)
-    return res.status(201).json({
+    return res.status(200).json({
       message: "User Login successfully",
       user: {
         _id: user._id,
@@ -255,6 +256,17 @@ console.log("login successful");
       },
       accessToken,
     });
+
+    
+
+    
+  } catch (error) {
+    console.error("Error during user login:", error);
+    return res.status(500).json({
+      error: "Server error during user login",
+      details: (error as Error).message,
+    });
+  }
 };
 //--------------------------------------Admin Login------------------------------------------
 // in this schema it will check for valid email and password inculding does it contains emojes
@@ -274,40 +286,40 @@ export const adminLogin = async (req: Request, res: Response) => {
 
   //validating the password
   //converting the password to a boolean
-  // '' is used when the lean method in mongo may return an object and it may null or undefined 
-  const isValid = !!await bcrypt.compare(password, user.password ?? '');
+  // '' is used when the lean method in mongo may return an object and it may null or undefined
+  const isValid = !!(await bcrypt.compare(password, user.password ?? ""));
   if (!isValid) return res.status(401).json({ error: "Invalid password" });
 
   if (user.role !== "admin") {
     return res.status(403).json({ error: "Access denied" });
   }
 
-console.log(" Admin login successful");
+  console.log(" Admin login successful");
 
-   const refreshToken = generateToken(user._id.toString(),"refresh");
+  const refreshToken = generateToken(user._id.toString(), "refresh");
 
-    res.cookie("jwt", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none", // required for cross-site cookies (e.g., if frontend is on another port/domain)
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 day
-    });
+  res.cookie("jwt", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none", // required for cross-site cookies (e.g., if frontend is on another port/domain)
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 day
+  });
 
-    // Generate JWT accessToken for the new user
-    const accessToken = generateToken(user._id.toString(), user.role);
-    console.log("🔑 JWT accessToken generated:", accessToken);
+  // Generate JWT accessToken for the new user
+  const accessToken = generateToken(user._id.toString(), user.role);
+  console.log("🔑 JWT accessToken generated:", accessToken);
 
-    // Send response with user data (excluding password)
-    return res.status(201).json({
-      message: "admin Login successful",
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role : user.role,
-      },
-      accessToken,
-    });
+  // Send response with user data (excluding password)
+  return res.status(201).json({
+    message: "admin Login successful",
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+    accessToken,
+  });
 };
 
 //--------------------------------------reset Password------------------------------------------
@@ -317,7 +329,6 @@ console.log(" Admin login successful");
 const forgotPasswordSchema = z.object({
   email: z.email("Invalid email format"),
 });
-
 
 export const requestPasswordResetOtp = async (req: Request, res: Response) => {
   // 1. Validate the email
@@ -336,15 +347,15 @@ export const requestPasswordResetOtp = async (req: Request, res: Response) => {
     if (!user) {
       console.log(`Password reset OTP attempt for non-existent user: ${email}`);
       return res.status(200).json({
-        message:
-          "If an account with this email exists, an OTP has been sent.",
+        message: "If an account with this email exists, an OTP has been sent.",
       });
     }
-    
+
     // 4. (Security) Check for recent resends to prevent spam
     const pending = await getPendingReset(email); // From otp.service.js
-    if (pending && Date.now() - pending.lastSentAt < 30_000) { // 30s throttle
-        return res.status(429).json({ error: "Please wait before resending." });
+    if (pending && Date.now() - pending.lastSentAt < 30_000) {
+      // 30s throttle
+      return res.status(429).json({ error: "Please wait before resending." });
     }
 
     // 5. Generate and store the OTP
@@ -355,15 +366,13 @@ export const requestPasswordResetOtp = async (req: Request, res: Response) => {
     await sendPasswordResetOtp(email, otp); // Your new function from email.js
 
     return res.status(200).json({
-      message:
-        "If an account with this email exists, an OTP has been sent.",
+      message: "If an account with this email exists, an OTP has been sent.",
     });
   } catch (err) {
     console.error("Forgot Password OTP Error:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 const verifyResetSchema = z.object({
   email: z.string().email(),
@@ -417,12 +426,10 @@ export const verifyResetOtpController = async (req: Request, res: Response) => {
   }
 };
 
-
 const resetPasswordSchema = z.object({
   resetToken: z.string().min(1, "Reset token is required"),
   password: z.string().min(8, "Password must be at least 8 characters long"),
 });
-
 
 export const resetPassword = async (req: Request, res: Response) => {
   // 1️⃣ Validate input
@@ -459,15 +466,13 @@ export const resetPassword = async (req: Request, res: Response) => {
     return res
       .status(200)
       .json({ message: "Password has been reset successfully." });
-
   } catch (err) {
     console.error("Reset Password Error:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
 
-
-export const refreshToken = async (req :Request, res:Response) => {
+export const refreshToken = async (req: Request, res: Response) => {
   try {
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {
@@ -478,39 +483,37 @@ export const refreshToken = async (req :Request, res:Response) => {
     const decoded = verifyRefreshToken(refreshToken);
 
     // Generate new access token
-    const newAccessToken = generateToken(decoded.userId , decoded.userRole);
+    const newAccessToken = generateToken(decoded.userId, decoded.userRole);
 
     return res.status(200).json({ accessToken: newAccessToken });
   } catch (error) {
     console.error("Refresh token failed:", error.message);
-    return res.status(403).json({ message: "Invalid or expired refresh token" });
+    return res
+      .status(403)
+      .json({ message: "Invalid or expired refresh token" });
   }
 };
-
 
 export const tutorLogin = async (req: Request, res: Response) => {
   console.log("tutor login called");
   try {
     //  Validate input
     const parse = LoginSchema.safeParse(req.body);
-    if (!parse.success)
-      return res.status(400).json({ error: "Invalid input" });
+    if (!parse.success) return res.status(400).json({ error: "Invalid input" });
 
     const { email, password } = parse.data;
     console.log("Parsed tutor login data:", { email, password });
 
     //  Check if tutor exists
-  const tutor = await User.findOne({ email: email.toLowerCase() }).lean();
-    if (!tutor)
-      return res.status(404).json({ error: "Tutor not found" });
+    const tutor = await User.findOne({ email: email.toLowerCase() }).lean();
+    if (!tutor) return res.status(404).json({ error: "Tutor not found" });
 
     if (tutor.role !== "tutor") {
       return res.status(403).json({ error: "Access denied not a tutor" });
     }
     // Validate password
     const isValid = await bcrypt.compare(password, tutor.password ?? "");
-    if (!isValid)
-      return res.status(401).json({ error: "Invalid password" });
+    if (!isValid) return res.status(401).json({ error: "Invalid password" });
 
     console.log("Tutor login successful");
 

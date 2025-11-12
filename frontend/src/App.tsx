@@ -20,7 +20,7 @@ import TutorLogin from "./pages/auth/TutorLogin";
 import TestPage from "./pages/Test";
 import EditProfilePage from "./components/edit-profile-page";
 import Dashboard from "./components/tutorComponent/Dashboard";
-
+import TutorProtectedRoute from "./routes/TutorProtectedRoute";
 
 export default function App() {
   return (
@@ -44,29 +44,27 @@ export default function App() {
         {/* Tutor Routes */}
         <Route path="/tutor/login" element={<TutorLogin />} />
 
-        <Route path="/tutor" element={<TutorLayout />} >
-          <Route path = "dashboard" element={<Dashboard />} />
-          <Route path="/tutor/profile" element={<EditProfilePage/>}/>
-          <Route path="/tutor/test" element={<TestPage/>}/>
+        <Route path="/tutor"element={
+          <TutorProtectedRoute>
+              <TutorLayout />
+            </TutorProtectedRoute>}>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="/tutor/profile" element={<EditProfilePage />} />
+          <Route path="/tutor/test" element={<TestPage />} />
         </Route>
 
         {/* Protected Admin Routes */}
-        <Route
-          path="/admin"
-          element={
+        <Route path="/admin" element={
             <AdminProtectedRoute>
               <AdminLayout />
             </AdminProtectedRoute>
-          }
-        >
+          }>
           <Route index element={<AdminDashboard />} />
           <Route path="categories" element={<CategoryManagement />} />
           <Route path="categories/:id" element={<CategoryDetails />} />
           <Route path="students" element={<StudentsDetails />} />
           <Route path="tutors" element={<TutorDetails />} />
           <Route path="test" element={<TutorDetails />} />
-
-
         </Route>
 
         {/* Catch all */}
