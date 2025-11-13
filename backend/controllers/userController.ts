@@ -48,6 +48,17 @@ export const editProfile = async (req: Request, res: Response) => {
   }
 };
 
+// const s3Client = new S3Client({
+//   region: process.env.AWS_REGION!,
+//   credentials: {
+//     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+//     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+//   },
+// });
+
+// import { Request, Response } from "express";
+// import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+// import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -58,30 +69,41 @@ const s3Client = new S3Client({
 });
 
 export const uploadImage = async (req: Request, res: Response) => {
+  console.log("📤 Image upload controller called");
+
   try {
     const { userId } = req.params;
-    const { fileType } = req.query;
+    const fileType = req.query.fileType as string;
 
-    if (!userId) {
-      return res.status(400).json({ message: "UserId is required" });
+    if (!userId || !fileType) {
+      return res
+        .status(400)
+        .json({ message: "userId and fileType are required" });
     }
 
-    const key = `profile-images/${userId}-${Date.now()}.${(fileType as string)?.split("/")[1] || "jpg"}`;
+    // Generate a safe key
+    const ext =
+      (fileType as string)?.split("/")[1] === "jpeg"
+        ? "jpg"
+        : (fileType as string)?.split("/")[1];
+    const key = `profile-images/${userId}-${Date.now()}.${ext}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME!,
       Key: key,
-      ContentType: fileType as string,
+      ContentType: fileType,
     });
 
     const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 60 });
 
+    const publicUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
     return res.status(200).json({
       message: "Presigned URL generated successfully",
-      data: { uploadURL, key },
+      data: { uploadURL, key, publicUrl },
     });
   } catch (error: any) {
-    console.error("Error generating presigned URL:", error);
+    console.error("❌ Error generating presigned URL:", error);
     return res.status(500).json({
       message: "Failed to generate presigned URL",
       error: error.message || "Internal Server Error",

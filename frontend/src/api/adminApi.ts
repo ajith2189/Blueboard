@@ -1,6 +1,7 @@
 import axiosInstance from "@/utils/axios";
 
 export type User = {
+  user: any;
   _id: string;
   name: string;
   email: string;
