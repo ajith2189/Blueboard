@@ -1,15 +1,14 @@
 import axiosInstance from "@/utils/axios";
 
 export type User = {
-  user: any;
   _id: string;
-  name: string;
-  email: string;
-  role: "user" | "tutor";
-  is_blocked: boolean;
-  createdAt: string;
-  updatedAt: string;
-  profile_picture_url: string | null;
+  name?: string;
+  email?: string;
+  role?: "user" | "tutor";
+  is_blocked?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  profile_picture_url?: string | null;
 };
 export type Category = {
   category_id: string;

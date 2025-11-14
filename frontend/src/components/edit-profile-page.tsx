@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { getPreSignedUrlApi, updateProfileApi } from "@/api/userApi";
 import uploadToS3 from "@/utils/uploadToS3";
 import { updateProfile } from "@/features/authSlice";
+import { useDispatch } from "react-redux";
 // import { email, string } from "zod";
 
 export default function EditProfilePage() {
@@ -28,22 +29,19 @@ export default function EditProfilePage() {
   const [validationError, setValidationError] = useState({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const dispatch = useDispatch();
+
   const user = useSelector((state: { auth: User }) => state.auth.user);
-  // console.log(user);
+  console.log("user dat on the store is ", user);
 
   const [profileData, setProfileData] = useState({
+    userId: user.userId,
     fullName: user?.name || "John Anderson",
     email: user?.email || "john.anderson@example.com",
     about:
       user?.about || "Passionate learner in web development and UI design.",
-    profileImage: user?.image || noProfilePic,
+    profileImage: user?.profile_picture_url || noProfilePic,
   });
-
-  // const [formData, setFormData] = useState({
-  //   name: "",
-  //   email: "",
-  //   profileImage: null,
-  // });
 
   const [tempImage, setTempImage] = useState({
     imageUrl: "",
@@ -79,7 +77,7 @@ export default function EditProfilePage() {
 
     // basic validation techniques--------------------------------------------------------------
 
-    const { email, fullName, about } = profileData;
+    const { email, fullName, about, userId } = profileData;
 
     const validationErrors: { name?: string; email?: string } = {};
 
@@ -109,52 +107,51 @@ export default function EditProfilePage() {
     //----------------------------------------------------------------------------------
     try {
       if (tempImage.image) {
-        // 1️⃣ Get pre-signed URL from your backend using Axios (with JWT)
         const response = await getPreSignedUrlApi(
           user.userId,
           tempImage.image.type
         );
         const { uploadURL, key } = response.data;
 
-        // 2️⃣ Upload the file directly to S3 using Fetch
-        const uploadResponse = await fetch(uploadURL, {
-          method: "PUT",
-          headers: { "Content-Type": tempImage.image.type },
-          body: tempImage.image,
-        });
+        const uploadResponse = await uploadToS3(tempImage.image, uploadURL);
 
         if (!uploadResponse.ok) {
           throw new Error("S3 upload failed");
         }
-
-        // 3️⃣ Construct the public URL for immediate use (show in UI)
-        const publicUrl = `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${
-          import.meta.env.VITE_AWS_REGION
-        }.amazonaws.com/${key}`;
-        console.log("✅ File uploaded successfully:", publicUrl);
+        console.log("the uploadResonse is :- ", uploadResponse);
 
         const data = {
-          profile_picture_url : publicUrl,
-          name : fullName,
-          about : about
-        }
+          profile_picture_url: key,
+          name: fullName,
+          about: about,
+        };
 
-        const updatedResponse = await  updateProfileApi(data);
+        const updatedResponse = await updateProfileApi(data, userId);
 
-        await updateProfile(updatedResponse.data);
+        console.log("after uploading the user data is ", updatedResponse.data);
 
-        
-
+        await dispatch(updateProfile(updatedResponse.data));
       }
 
       setIsLoading(false);
     } catch (error) {
       console.error("❌ Error occurred while profile uploading", error);
+      toast.error("Error while uploading image");
       setIsLoading(false);
+    } finally {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-    finally{
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
+
+    const data = {
+      name: fullName,
+      about: about,
+    };
+
+    const updatedResponse = await updateProfileApi(data, userId);
+
+    console.log("after uploading the user data is ", updatedResponse.data);
+
+    await dispatch(updateProfile(updatedResponse.data));
   };
 
   return (

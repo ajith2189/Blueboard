@@ -11,10 +11,10 @@ export const getPreSignedUrlApi = async (userId: string, fileType: string) => {
   return response.data;
 };
 
-export const updateProfileApi = async (data: User) => {
-  const response = await axiosInstance.get(`/user/update-profile`, {
-    data: data,
+export const updateProfileApi = async (data: User, userId: string) => {
+  const response = await axiosInstance.patch(`/user/edit/${userId}`, {
+    data,
   });
 
-  return response;
+  return response.data;
 };
