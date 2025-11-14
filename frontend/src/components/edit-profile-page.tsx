@@ -1,6 +1,5 @@
-import type React from "react";
-
 import { useRef, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,145 +12,111 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, Save } from "lucide-react";
-import { useSelector } from "react-redux";
 import noProfilePic from "../../public/diverse-user-avatars.png";
-// import { no } from "zod/v4/locales";
-import type { User } from "@/api/adminApi";
 import { toast } from "sonner";
+
 import { getPreSignedUrlApi, updateProfileApi } from "@/api/userApi";
 import uploadToS3 from "@/utils/uploadToS3";
 import { updateProfile } from "@/features/authSlice";
-import { useDispatch } from "react-redux";
-// import { email, string } from "zod";
+import type { User } from "@/api/adminApi";
 
 export default function EditProfilePage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [validationError, setValidationError] = useState({});
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const dispatch = useDispatch();
 
-  const user = useSelector((state: { auth: User }) => state.auth.user);
-  console.log("user dat on the store is ", user);
+  const user = useSelector((state: User) => state.auth.user);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [profileData, setProfileData] = useState({
-    userId: user.userId,
-    fullName: user?.name || "John Anderson",
-    email: user?.email || "john.anderson@example.com",
-    about:
-      user?.about || "Passionate learner in web development and UI design.",
-    profileImage: user?.profile_picture_url || noProfilePic,
+    userId: user._id,
+    name: user?.name || "",
+    email: user?.email || "",
+    about: user?.about || "",
+    profile_picture_url: user?.profile_picture_url || noProfilePic,
   });
 
-  const [tempImage, setTempImage] = useState({
-    imageUrl: "",
-    image: null,
+  const [tempImage, setTempImage] = useState<{
+    file: File | null;
+    localPreview: string | null;
+  }>({
+    file: null,
+    localPreview: null,
   });
 
-  const handleImageClick = () => {
-    fileInputRef.current?.click();
+  // -------------------- IMAGE HANDLING --------------------
+  const handleImageClick = () => fileInputRef.current?.click();
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setTempImage({
+      file,
+      localPreview: URL.createObjectURL(file),
+    });
   };
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setTempImage({
-        ...tempImage,
-        image: file,
-        imageUrl: URL.createObjectURL(file),
-      });
-    }
-  };
-
+  // -------------------- FORM INPUT HANDLING --------------------
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // -------------------- SAVE PROFILE --------------------
   const handleSave = async () => {
-    setIsLoading(true);
-
-    // basic validation techniques--------------------------------------------------------------
-
-    const { email, fullName, about, userId } = profileData;
-
-    const validationErrors: { name?: string; email?: string } = {};
-
-    if (!fullName.trim()) {
-      validationErrors.name = "Name Cannot be Empty";
-    }
-
-    if (!email.trim()) {
-      validationErrors.email = "Email Cannot be Empty";
-    } else if (
-      !email.includes("@") ||
-      !email.includes(".") ||
-      /[^a-zA-Z0-9@.]/.test(email)
-    ) {
-      validationErrors.email = "Invalid Email Address";
-    }
-
-    if (Object.keys(validationErrors).length > 0) {
-      setValidationError(validationErrors);
-      return;
-    }
-
-    if (!fullName || !email) {
-      toast.error("Please fill out all fields");
-      return;
-    }
-    //----------------------------------------------------------------------------------
     try {
-      if (tempImage.image) {
-        const response = await getPreSignedUrlApi(
-          user.userId,
-          tempImage.image.type
-        );
-        const { uploadURL, key } = response.data;
+      setIsLoading(true);
 
-        const uploadResponse = await uploadToS3(tempImage.image, uploadURL);
+      const { name, about, userId } = profileData;
 
-        if (!uploadResponse.ok) {
-          throw new Error("S3 upload failed");
-        }
-        console.log("the uploadResonse is :- ", uploadResponse);
-
-        const data = {
-          profile_picture_url: key,
-          name: fullName,
-          about: about,
-        };
-
-        const updatedResponse = await updateProfileApi(data, userId);
-
-        console.log("after uploading the user data is ", updatedResponse.data);
-
-        await dispatch(updateProfile(updatedResponse.data));
+      if (!name.trim()) {
+        toast.error("Name cannot be empty");
+        return;
       }
 
-      setIsLoading(false);
-    } catch (error) {
-      console.error("❌ Error occurred while profile uploading", error);
-      toast.error("Error while uploading image");
-      setIsLoading(false);
+      // Step 1: Upload image if selected
+      let uploadedImageKey = null;
+
+      if (tempImage.file) {
+        const preSignRes = await getPreSignedUrlApi(
+          userId,
+          tempImage.file.type
+        );
+        const { uploadURL, key } = preSignRes.data;
+
+        const uploadResult = await uploadToS3(tempImage.file, uploadURL);
+        if (!uploadResult.ok) throw new Error("S3 upload failed");
+
+        uploadedImageKey = key;
+      }
+
+      // Step 2: Prepare profile update payload
+      const updateData: any = {
+        name,
+        about,
+      };
+
+      if (uploadedImageKey) {
+        updateData.profile_picture_url = uploadedImageKey;
+      }
+
+      // Step 3: Send update request
+      const updatedResponse = await updateProfileApi(updateData, userId);
+
+      console.log("SERVER UPDATE RESPONSE →", updatedResponse.data.data);
+
+      // Step 4: Update Redux store
+      dispatch(updateProfile(updatedResponse.data.data));
+
+      toast.success("Profile updated successfully!");
+    } catch (err) {
+      console.error("Profile update failed:", err);
+      toast.error("Failed to update profile");
     } finally {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setIsLoading(false);
     }
-
-    const data = {
-      name: fullName,
-      about: about,
-    };
-
-    const updatedResponse = await updateProfileApi(data, userId);
-
-    console.log("after uploading the user data is ", updatedResponse.data);
-
-    await dispatch(updateProfile(updatedResponse.data));
   };
 
   return (
@@ -176,7 +141,9 @@ export default function EditProfilePage() {
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="flex-shrink-0">
                 <img
-                  src={tempImage.imageUrl || profileData.profileImage}
+                  src={
+                    tempImage.localPreview || profileData.profile_picture_url
+                  }
                   alt="Profile"
                   className="w-24 h-24 rounded-full border-4 border-primary/20 object-cover"
                 />
@@ -224,13 +191,13 @@ export default function EditProfilePage() {
                 >
                   Full Name
                 </Label>
-                <span className="text-red-600 block text-sm mb-1 font-medium">
+                {/* <span className="text-red-600 block text-sm mb-1 font-medium">
                   {validationError.name}
-                </span>
+                </span> */}
                 <Input
                   id="fullName"
                   name="fullName"
-                  value={profileData.fullName}
+                  value={profileData.name}
                   onChange={handleInputChange}
                   className="bg-card border-border text-foreground placeholder:text-muted-foreground"
                 />
@@ -251,9 +218,9 @@ export default function EditProfilePage() {
                 <Label htmlFor="email" className="text-foreground font-medium">
                   Email Address
                 </Label>
-                <span className="text-red-600 block text-sm mb-1 font-medium">
+                {/* <span className="text-red-600 block text-sm mb-1 font-medium">
                   {validationError.email}
-                </span>
+                </span> */}
                 <Input
                   id="email"
                   name="email"
